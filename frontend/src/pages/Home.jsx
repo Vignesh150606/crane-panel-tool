@@ -41,29 +41,46 @@ const features = [
 
 export default function Home() {
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Hero */}
-      <div className="text-center py-16">
-        <div className="text-6xl mb-4">⚙️</div>
-        <h1 className="text-4xl font-bold text-white mb-4">
-          EOT Crane Control Panel
-          <span className="text-industrial-accent"> Design Tool</span>
+    <div style={{ width: '100%' }}>
+
+      {/* Hero Section */}
+      <div style={{ textAlign: 'center', padding: '4rem 0 3rem' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚙️</div>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+          EOT Crane Control Panel{' '}
+          <span style={{ color: '#f59e0b' }}>Design Tool</span>
         </h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
+        <p style={{ color: '#94a3b8', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
           A complete engineering tool for designing, simulating and validating
           industrial crane control panels. Built on real industrial experience
           from EOT crane panel assembly at Nian Drives and Controls.
         </p>
-        <div className="flex gap-4 justify-center">
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link
             to="/cranes"
-            className="bg-industrial-accent text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-400 transition-colors"
+            style={{
+              backgroundColor: '#f59e0b',
+              color: 'black',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.5rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}
           >
             Select Crane Type
           </Link>
           <Link
             to="/simulator"
-            className="border border-industrial-accent text-industrial-accent px-6 py-3 rounded-lg font-semibold hover:bg-industrial-accent hover:text-black transition-colors"
+            style={{
+              border: '2px solid #f59e0b',
+              color: '#f59e0b',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.5rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}
           >
             Open Panel Simulator
           </Link>
@@ -71,30 +88,60 @@ export default function Home() {
       </div>
 
       {/* Feature Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-16">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1.5rem',
+        marginBottom: '3rem'
+      }}>
         {features.map(feature => (
           <Link
             key={feature.path}
             to={feature.path}
-            className="bg-industrial-panel border border-industrial-steel rounded-xl p-6 hover:border-industrial-accent transition-colors group"
+            style={{
+              backgroundColor: '#1a2632',
+              border: '1px solid #2d3f50',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              textDecoration: 'none',
+              display: 'block',
+              transition: 'border-color 0.2s, transform 0.2s'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = '#f59e0b'
+              e.currentTarget.style.transform = 'translateY(-2px)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = '#2d3f50'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
           >
-            <div className="text-4xl mb-3">{feature.icon}</div>
-            <h3 className="text-white font-semibold text-lg mb-2 group-hover:text-industrial-accent transition-colors">
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{feature.icon}</div>
+            <h3 style={{ color: 'white', fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
               {feature.title}
             </h3>
-            <p className="text-gray-400 text-sm">{feature.desc}</p>
+            <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: '1.5' }}>
+              {feature.desc}
+            </p>
           </Link>
         ))}
       </div>
 
-      {/* Tech note */}
-      <div className="border border-industrial-steel rounded-xl p-6 mb-8 text-center">
-        <p className="text-gray-400 text-sm">
+      {/* Footer note */}
+      <div style={{
+        border: '1px solid #2d3f50',
+        borderRadius: '0.75rem',
+        padding: '1rem',
+        textAlign: 'center',
+        marginBottom: '2rem'
+      }}>
+        <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
           Built with engineering data from real EOT crane panel assembly •
           Relay interlock logic based on industrial standards •
           Component ratings follow IS/IEC standards
         </p>
       </div>
+
     </div>
   )
 }

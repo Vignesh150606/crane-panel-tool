@@ -14,28 +14,47 @@ export default function Navbar() {
   const location = useLocation()
 
   return (
-    <nav className="bg-industrial-panel border-b border-industrial-steel">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-industrial-accent font-bold text-xl">⚙</span>
-            <span className="text-white font-bold text-lg">CranePanel Pro</span>
-          </Link>
-          <div className="flex gap-1 overflow-x-auto">
-            {navItems.map(item => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded text-sm whitespace-nowrap transition-colors ${
-                  location.pathname === item.path
-                    ? 'bg-industrial-accent text-black font-semibold'
-                    : 'text-gray-300 hover:text-white hover:bg-industrial-steel'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
+    <nav style={{
+      backgroundColor: '#1a2632',
+      borderBottom: '1px solid #2d3f50',
+      position: 'sticky',
+      top: 0,
+      zIndex: 100
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '64px'
+      }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
+          <span style={{ color: '#f59e0b', fontSize: '1.5rem' }}>⚙</span>
+          <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>CranePanel Pro</span>
+        </Link>
+
+        <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto' }}>
+          {navItems.map(item => (
+            <Link
+              key={item.path}
+              to={item.path}
+              style={{
+                padding: '0.5rem 0.75rem',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+                textDecoration: 'none',
+                backgroundColor: location.pathname === item.path ? '#f59e0b' : 'transparent',
+                color: location.pathname === item.path ? 'black' : '#94a3b8',
+                fontWeight: location.pathname === item.path ? '600' : '400',
+                transition: 'all 0.2s'
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
       </div>
     </nav>

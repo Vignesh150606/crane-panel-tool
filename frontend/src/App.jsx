@@ -11,9 +11,9 @@ import NameplateCalculator from './pages/NameplateCalculator'
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-industrial-dark">
+      <div style={{ minHeight: '100vh', backgroundColor: '#0f1923' }}>
         <Navbar />
-        <main className="container mx-auto px-4 py-8">
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/cranes" element={<CraneSelector />} />
@@ -23,7 +23,7 @@ function App() {
             <Route path="/bom" element={<BOMGenerator />} />
             <Route path="/nameplate" element={<NameplateCalculator />} />
           </Routes>
-        </main>
+        </div>
       </div>
     </Router>
   )
