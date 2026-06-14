@@ -1,5 +1,4 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, Body
 import math
 
 router = APIRouter(prefix="/api", tags=["Calculations"])
@@ -12,29 +11,20 @@ MPCB_RATINGS = [0.63,1,1.6,2.5,4,6.3,10,16,25,32,40,50,63,80,100]
 CABLE_SIZES = [1.5,2.5,4,6,10,16,25,35,50,70,95,120]
 CABLE_CAPACITY = {1.5:15,2.5:20,4:27,6:34,10:46,16:61,25:80,35:99,50:119,70:151,95:182,120:210}
 
-class MotorInput(BaseModel):
-    load_tons: float
-    hoist_speed: float
-    lt_speed: float
-    ct_speed: float
-
-class NameplateInput(BaseModel):
-    voltage: float = 415
-    current: float
-    hp: float = 0
-    kw: float = 0
-    use_hp: bool = True
 
 def calc_flc(hp):
     kw = hp * 0.746
     return (kw * 1000) / (math.sqrt(3) * VOLTAGE * PF * EFFICIENCY)
 
+
 def select_contactor(flc):
     req = flc * 3
     return next((r for r in CONTACTOR_RATINGS if r >= req), CONTACTOR_RATINGS[-1])
 
+
 def select_mpcb(flc):
     return next((r for r in MPCB_RATINGS if r >= flc), MPCB_RATINGS[-1])
+
 
 def select_cable(flc):
     for size in CABLE_SIZES:
@@ -42,12 +32,19 @@ def select_cable(flc):
             return size
     return CABLE_SIZES[-1]
 
+
 @router.get("/ping")
 def ping():
     return {"message": "API working"}
 
+
 @router.post("/calculate-motor")
-def calculate_motor(data: MotorInput):
+def calculate_motor(data: dict = Body(...)):
+    load_tons = float(data.get("load_tons", 0))
+    hoist_speed = float(data.get("hoist_speed", 0))
+    lt_speed = float(data.get("lt_speed", 0))
+    ct_speed = float(data.get("ct_speed", 0))
+
     def calc_hp(load_tons, speed_mpm, factor=1.0):
         load_kg = load_tons * 1000 * factor
         speed_ms = speed_mpm / 60
@@ -55,9 +52,9 @@ def calculate_motor(data: MotorInput):
         return power_w / 746
 
     motors = {
-        "hoist": calc_hp(data.load_tons, data.hoist_speed),
-        "lt": calc_hp(data.load_tons, data.lt_speed, 0.1),
-        "ct": calc_hp(data.load_tons, data.ct_speed, 0.05)
+        "hoist": calc_hp(load_tons, hoist_speed),
+        "lt": calc_hp(load_tons, lt_speed, 0.1),
+        "ct": calc_hp(load_tons, ct_speed, 0.05)
     }
 
     results = {}
@@ -75,10 +72,17 @@ def calculate_motor(data: MotorInput):
 
     return results
 
+
 @router.post("/calculate-nameplate")
-def calculate_nameplate(data: NameplateInput):
-    hp = data.hp if data.use_hp else data.kw / 0.746
-    flc = data.current
+def calculate_nameplate(data: dict = Body(...)):
+    use_hp = data.get("use_hp", True)
+    hp_val = float(data.get("hp", 0))
+    kw_val = float(data.get("kw", 0))
+    current = float(data.get("current", 0))
+
+    hp = hp_val if use_hp else kw_val / 0.746
+    flc = current
+
     return {
         "hp": round(hp, 2),
         "kw": round(hp * 0.746, 2),
