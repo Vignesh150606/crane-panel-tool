@@ -1,14 +1,21 @@
 import { Link, useLocation } from 'react-router-dom'
 
+
 const navItems = [
   { path: '/', label: 'Home' },
-  { path: '/cranes', label: 'Crane Selector' },
-  { path: '/calculator', label: 'Load Calculator' },
-  { path: '/simulator', label: 'Panel Simulator' },
+  { path: '/cranes', label: 'Cranes' },
+  { path: '/calculator', label: 'Load Calc' },
+  { path: '/simulator', label: 'Panel Sim' },
+  { path: '/control-circuit', label: 'Control Circuit' },
   { path: '/power-circuit', label: 'Power Circuit' },
-  { path: '/bom', label: 'BOM Generator' },
-  { path: '/nameplate', label: 'Nameplate Calc' },
+  { path: '/star-delta', label: 'Star-Delta' },
+  { path: '/cable-busbar', label: 'Cable/Busbar' },
+  { path: '/panel-layout', label: 'Panel Layout' },
+  { path: '/fault-diagnosis', label: 'Fault Diagnosis' },
+  { path: '/bom', label: 'BOM' },
+  { path: '/nameplate', label: 'Nameplate' },
 ]
+
 
 export default function Navbar() {
   const location = useLocation()

@@ -7,7 +7,11 @@ import PanelSimulator from './pages/PanelSimulator'
 import PowerCircuit from './pages/PowerCircuit'
 import BOMGenerator from './pages/BOMGenerator'
 import NameplateCalculator from './pages/NameplateCalculator'
-
+import ControlCircuit from './pages/ControlCircuit'
+import StarDelta from './pages/StarDelta'
+import CableBusbar from './pages/CableBusbar'
+import PanelLayout from './pages/PanelLayout'
+import FaultDiagnosis from './pages/FaultDiagnosis'
 function App() {
   return (
     <Router>
@@ -22,6 +26,11 @@ function App() {
             <Route path="/power-circuit" element={<PowerCircuit />} />
             <Route path="/bom" element={<BOMGenerator />} />
             <Route path="/nameplate" element={<NameplateCalculator />} />
+            <Route path="/control-circuit" element={<ControlCircuit />} />
+            <Route path="/star-delta" element={<StarDelta />} />
+            <Route path="/cable-busbar" element={<CableBusbar />} />
+            <Route path="/panel-layout" element={<PanelLayout />} />
+            <Route path="/fault-diagnosis" element={<FaultDiagnosis />} />
           </Routes>
         </div>
       </div>
