@@ -1,9 +1,14 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Gamepad2, Octagon, BookOpen } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 
 const MOTIONS = {
   LT: { label: 'Long Travel', fwd: 'FORWARD', rev: 'REVERSE', color: '#3b82f6' },
-  CT: { label: 'Cross Travel', fwd: 'LEFT', rev: 'RIGHT', color: '#8b5cf6' },
-  HOIST: { label: 'Hoist', fwd: 'UP', rev: 'DOWN', color: '#f59e0b' }
+  CT: { label: 'Cross Travel', fwd: 'LEFT', rev: 'RIGHT', color: '#a78bfa' },
+  HOIST: { label: 'Hoist', fwd: 'UP', rev: 'DOWN', color: '#f5a623' },
 }
 
 export default function PanelSimulator() {
@@ -11,15 +16,15 @@ export default function PanelSimulator() {
   const [log, setLog] = useState([])
   const [showRelay, setShowRelay] = useState(true)
 
-  const activate = (motion, dir) => {
-    setActive(prev => {
+  const activate = (m, dir) => {
+    setActive((prev) => {
       const newState = { ...prev }
-      if (prev[motion] === dir) {
-        newState[motion] = null
-        addLog(`${MOTIONS[motion].label} ${dir} — DEACTIVATED`)
+      if (prev[m] === dir) {
+        newState[m] = null
+        addLog(`${MOTIONS[m].label} ${dir} — DEACTIVATED`)
       } else {
-        newState[motion] = dir
-        addLog(`${MOTIONS[motion].label} ${dir} — ACTIVATED (interlock blocks opposing direction)`)
+        newState[m] = dir
+        addLog(`${MOTIONS[m].label} ${dir} — ACTIVATED (interlock blocks opposing direction)`)
       }
       return newState
     })
@@ -27,181 +32,151 @@ export default function PanelSimulator() {
 
   const addLog = (msg) => {
     const time = new Date().toLocaleTimeString()
-    setLog(prev => [`[${time}] ${msg}`, ...prev.slice(0, 9)])
+    setLog((prev) => [`[${time}] ${msg}`, ...prev.slice(0, 9)])
   }
 
   const eStop = () => {
     setActive({ LT: null, CT: null, HOIST: null })
-    addLog('⚠ EMERGENCY STOP — All motions halted')
+    addLog('EMERGENCY STOP — All motions halted')
   }
 
-  const anyActive = Object.values(active).some(v => v !== null)
+  const anyActive = Object.values(active).some((v) => v !== null)
 
   return (
-    <div style={{ width: '100%' }}>
-      <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>🎛️ Panel Simulator</h1>
-      <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>Live control panel with relay interlocking logic. Only one direction per motion can be active at a time.</p>
+    <div>
+      <PageHeader
+        icon={Gamepad2}
+        title="Panel Simulator"
+        description="Live control panel with relay interlocking logic. Only one direction per motion can be active at a time."
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-
-        {/* Control Panel */}
-        <div style={{ backgroundColor: '#1a2632', borderRadius: '1rem', padding: '1.5rem', border: '2px solid #2d3f50' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ color: '#f59e0b', fontWeight: '600' }}>Control Panel</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: anyActive ? '#22c55e' : '#2d3f50', boxShadow: anyActive ? '0 0 8px #22c55e' : 'none' }} />
-              <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{anyActive ? 'RUNNING' : 'STANDBY'}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card padding="lg">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="font-display text-amber font-semibold">Control Panel</h2>
+            <div className="flex items-center gap-2">
+              <div className={`w-2.5 h-2.5 rounded-full ${anyActive ? 'bg-safe' : 'bg-steel'}`} style={anyActive ? { boxShadow: '0 0 8px var(--color-safe)' } : {}} />
+              <span className="text-text-dim text-xs">{anyActive ? 'RUNNING' : 'STANDBY'}</span>
             </div>
           </div>
 
-          {/* E-Stop */}
           <button
             onClick={eStop}
-            style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', padding: '1rem', borderRadius: '0.5rem', border: '3px solid #dc2626', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', marginBottom: '1.5rem', letterSpacing: '0.1em' }}
+            className="w-full bg-danger text-white py-4 rounded-lg border-[3px] font-black text-lg cursor-pointer mb-6 tracking-widest hover:brightness-110 transition-all"
+            style={{ borderColor: '#dc2626' }}
           >
-            ⛔ EMERGENCY STOP
+            <Octagon size={18} className="inline mr-2 -mt-1" /> EMERGENCY STOP
           </button>
 
-          {/* Motion Controls */}
-          {Object.entries(MOTIONS).map(([key, motion]) => (
-            <div key={key} style={{ marginBottom: '1.25rem', backgroundColor: '#0f1923', borderRadius: '0.75rem', padding: '1rem', border: `1px solid ${active[key] ? motion.color : '#2d3f50'}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ color: 'white', fontWeight: '600', fontSize: '0.9rem' }}>{motion.label}</span>
-                <span style={{ color: active[key] ? '#22c55e' : '#64748b', fontSize: '0.75rem', fontWeight: '600' }}>
+          {Object.entries(MOTIONS).map(([key, m]) => (
+            <div
+              key={key}
+              className="mb-4 bg-inset rounded-xl p-4 border transition-colors"
+              style={{ borderColor: active[key] ? m.color : 'var(--color-steel)' }}
+            >
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-text font-semibold text-sm">{m.label}</span>
+                <span className={`text-xs font-semibold ${active[key] ? 'text-safe' : 'text-text-dim'}`}>
                   {active[key] || 'STOPPED'}
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                {[motion.fwd, motion.rev].map(dir => (
-                  <button
+              <div className="grid grid-cols-2 gap-2">
+                {[m.fwd, m.rev].map((dir) => (
+                  <motion.button
                     key={dir}
+                    whileTap={{ scale: 0.96 }}
                     onClick={() => activate(key, dir)}
+                    className="py-2.5 rounded-md border-2 font-semibold text-sm cursor-pointer transition-colors"
                     style={{
-                      padding: '0.6rem',
-                      borderRadius: '0.375rem',
-                      border: '2px solid',
-                      borderColor: active[key] === dir ? motion.color : '#2d3f50',
-                      backgroundColor: active[key] === dir ? motion.color + '33' : 'transparent',
-                      color: active[key] === dir ? motion.color : '#94a3b8',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '0.8rem',
-                      transition: 'all 0.15s'
+                      borderColor: active[key] === dir ? m.color : 'var(--color-steel)',
+                      backgroundColor: active[key] === dir ? `${m.color}33` : 'transparent',
+                      color: active[key] === dir ? m.color : 'var(--color-text-muted)',
                     }}
                   >
                     {dir}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
           ))}
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <button
-              onClick={() => setShowRelay(!showRelay)}
-              style={{ flex: 1, padding: '0.5rem', backgroundColor: '#2d3f50', border: 'none', borderRadius: '0.375rem', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem' }}
-            >
-              {showRelay ? 'Hide' : 'Show'} Relay Diagram
-            </button>
-          </div>
-        </div>
+          <Button variant="secondary" className="w-full" onClick={() => setShowRelay(!showRelay)}>
+            {showRelay ? 'Hide' : 'Show'} Relay Diagram
+          </Button>
+        </Card>
 
-        {/* Right panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-          {/* Relay Diagram */}
+        <div className="flex flex-col gap-4">
           {showRelay && (
-            <div style={{ backgroundColor: '#1a2632', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #2d3f50' }}>
-              <h3 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '1rem' }}>Relay Interlock Diagram</h3>
-              {Object.entries(MOTIONS).map(([key, motion]) => (
-                <RelayDiagram key={key} motionKey={key} motion={motion} activeDir={active[key]} />
+            <Card padding="lg">
+              <h3 className="font-display text-amber font-semibold mb-4">Relay Interlock Diagram</h3>
+              {Object.entries(MOTIONS).map(([key, m]) => (
+                <RelayDiagram key={key} motion={m} activeDir={active[key]} />
               ))}
-            </div>
+            </Card>
           )}
 
-          {/* Activity Log */}
-          <div style={{ backgroundColor: '#1a2632', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #2d3f50' }}>
-            <h3 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '1rem' }}>Activity Log</h3>
+          <Card padding="lg">
+            <h3 className="font-display text-amber font-semibold mb-3">Activity Log</h3>
             {log.length === 0 ? (
-              <p style={{ color: '#2d3f50', fontSize: '0.8rem' }}>No activity yet. Press buttons above.</p>
+              <p className="text-text-dim text-sm">No activity yet. Press buttons above.</p>
             ) : (
-              log.map((entry, i) => (
-                <div key={i} style={{ color: i === 0 ? '#22c55e' : '#64748b', fontSize: '0.75rem', marginBottom: '0.25rem', fontFamily: 'monospace' }}>
-                  {entry}
-                </div>
-              ))
+              <div className="space-y-1">
+                {log.map((entry, i) => (
+                  <div key={i} className={`text-xs font-mono ${i === 0 ? 'text-safe' : 'text-text-dim'}`}>{entry}</div>
+                ))}
+              </div>
             )}
-          </div>
+          </Card>
 
-          {/* Interlock explanation */}
-          <div style={{ backgroundColor: '#0f1923', borderRadius: '0.75rem', padding: '1rem', border: '1px solid #2d3f50' }}>
-            <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.5rem' }}>📚 Interlock Logic</div>
-            <p style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: '1.6' }}>
+          <Card variant="inset">
+            <div className="flex items-center gap-1.5 text-amber font-semibold text-sm mb-2">
+              <BookOpen size={14} /> Interlock Logic
+            </div>
+            <p className="text-text-dim text-sm leading-relaxed">
               The NC contact of the Forward relay is wired in series with the Reverse relay coil.
-              If Forward is energised, its NC opens → Reverse cannot energise.
-              This prevents short circuit from simultaneous phase reversal.
+              If Forward is energised, its NC opens, so Reverse cannot energise.
+              This prevents a short circuit from simultaneous phase reversal.
             </p>
-            <div style={{ marginTop: '0.75rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#22c55e' }}>
+            <div className="mt-3 font-mono text-xs text-safe leading-relaxed">
               <div>FWD Coil ——[REV NC]—— Supply</div>
               <div>REV Coil ——[FWD NC]—— Supply</div>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
   )
 }
 
-function RelayDiagram({ motionKey, motion, activeDir }) {
+function RelayDiagram({ motion, activeDir }) {
   const fwdActive = activeDir === motion.fwd
   const revActive = activeDir === motion.rev
 
   return (
-    <div style={{ marginBottom: '1rem' }}>
-      <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '0.4rem', fontWeight: '600' }}>{motion.label}</div>
+    <div className="mb-4">
+      <div className="text-text-muted text-xs mb-1.5 font-semibold">{motion.label}</div>
       <svg width="100%" height="60" viewBox="0 0 320 60">
-        {/* Forward relay coil */}
-        <rect x="5" y="15" width="60" height="25" rx="4"
-          fill={fwdActive ? motion.color + '44' : '#0f1923'}
-          stroke={fwdActive ? motion.color : '#2d3f50'} strokeWidth="2" />
-        <text x="35" y="31" textAnchor="middle" fill={fwdActive ? motion.color : '#64748b'} fontSize="9" fontWeight="bold">
-          {motion.fwd}
-        </text>
-        <text x="35" y="42" textAnchor="middle" fill={fwdActive ? '#22c55e' : '#2d3f50'} fontSize="8">
-          {fwdActive ? 'ENERGISED' : 'OFF'}
-        </text>
+        <g className={fwdActive ? 'animate-pulse' : ''}>
+          <rect x="5" y="15" width="60" height="25" rx="4" fill={fwdActive ? `${motion.color}44` : 'var(--color-inset)'} stroke={fwdActive ? motion.color : 'var(--color-steel)'} strokeWidth="2" />
+          <text x="35" y="31" textAnchor="middle" fill={fwdActive ? motion.color : 'var(--color-text-muted)'} fontSize="9" fontWeight="bold">{motion.fwd}</text>
+          <text x="35" y="42" textAnchor="middle" fill={fwdActive ? 'var(--color-safe)' : 'var(--color-steel)'} fontSize="8">{fwdActive ? 'ENERGISED' : 'OFF'}</text>
+        </g>
 
-        {/* NC contact of FWD in REV circuit */}
-        <line x1="65" y1="27" x2="100" y2="27" stroke={revActive ? '#ef4444' : '#2d3f50'} strokeWidth="2" />
-        <text x="110" y="20" textAnchor="middle" fill={fwdActive ? '#ef4444' : '#22c55e'} fontSize="9">
-          {fwdActive ? 'NC OPEN' : 'NC CLOSED'}
-        </text>
-        <rect x="90" y="22" width="40" height="10" rx="2"
-          fill={fwdActive ? '#ef444433' : '#22c55e33'}
-          stroke={fwdActive ? '#ef4444' : '#22c55e'} strokeWidth="1.5" />
+        <line x1="65" y1="27" x2="100" y2="27" stroke={revActive ? 'var(--color-danger)' : 'var(--color-steel)'} strokeWidth="2" />
+        <text x="110" y="20" textAnchor="middle" fill={fwdActive ? 'var(--color-danger)' : 'var(--color-safe)'} fontSize="9">{fwdActive ? 'NC OPEN' : 'NC CLOSED'}</text>
+        <rect x="90" y="22" width="40" height="10" rx="2" fill={fwdActive ? 'color-mix(in srgb, var(--color-danger) 20%, transparent)' : 'color-mix(in srgb, var(--color-safe) 20%, transparent)'} stroke={fwdActive ? 'var(--color-danger)' : 'var(--color-safe)'} strokeWidth="1.5" />
 
-        {/* Line to REV coil */}
-        <line x1="130" y1="27" x2="180" y2="27" stroke={revActive ? motion.color : '#2d3f50'} strokeWidth="2" />
+        <line x1="130" y1="27" x2="180" y2="27" stroke={revActive ? motion.color : 'var(--color-steel)'} strokeWidth="2" />
 
-        {/* Reverse relay coil */}
-        <rect x="180" y="15" width="60" height="25" rx="4"
-          fill={revActive ? motion.color + '44' : '#0f1923'}
-          stroke={revActive ? motion.color : '#2d3f50'} strokeWidth="2" />
-        <text x="210" y="31" textAnchor="middle" fill={revActive ? motion.color : '#64748b'} fontSize="9" fontWeight="bold">
-          {motion.rev}
-        </text>
-        <text x="210" y="42" textAnchor="middle" fill={revActive ? '#22c55e' : '#2d3f50'} fontSize="8">
-          {revActive ? 'ENERGISED' : 'OFF'}
-        </text>
+        <g className={revActive ? 'animate-pulse' : ''}>
+          <rect x="180" y="15" width="60" height="25" rx="4" fill={revActive ? `${motion.color}44` : 'var(--color-inset)'} stroke={revActive ? motion.color : 'var(--color-steel)'} strokeWidth="2" />
+          <text x="210" y="31" textAnchor="middle" fill={revActive ? motion.color : 'var(--color-text-muted)'} fontSize="9" fontWeight="bold">{motion.rev}</text>
+          <text x="210" y="42" textAnchor="middle" fill={revActive ? 'var(--color-safe)' : 'var(--color-steel)'} fontSize="8">{revActive ? 'ENERGISED' : 'OFF'}</text>
+        </g>
 
-        {/* NC contact of REV in FWD circuit */}
-        <line x1="240" y1="27" x2="275" y2="27" stroke={fwdActive ? '#ef4444' : '#2d3f50'} strokeWidth="2" />
-        <rect x="255" y="22" width="40" height="10" rx="2"
-          fill={revActive ? '#ef444433' : '#22c55e33'}
-          stroke={revActive ? '#ef4444' : '#22c55e'} strokeWidth="1.5" />
-        <text x="275" y="20" textAnchor="middle" fill={revActive ? '#ef4444' : '#22c55e'} fontSize="9">
-          {revActive ? 'NC OPEN' : 'NC CLOSED'}
-        </text>
+        <line x1="240" y1="27" x2="275" y2="27" stroke={fwdActive ? 'var(--color-danger)' : 'var(--color-steel)'} strokeWidth="2" />
+        <rect x="255" y="22" width="40" height="10" rx="2" fill={revActive ? 'color-mix(in srgb, var(--color-danger) 20%, transparent)' : 'color-mix(in srgb, var(--color-safe) 20%, transparent)'} stroke={revActive ? 'var(--color-danger)' : 'var(--color-safe)'} strokeWidth="1.5" />
+        <text x="275" y="20" textAnchor="middle" fill={revActive ? 'var(--color-danger)' : 'var(--color-safe)'} fontSize="9">{revActive ? 'NC OPEN' : 'NC CLOSED'}</text>
       </svg>
     </div>
   )

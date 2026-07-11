@@ -1,0 +1,166 @@
+# Crane Panel Design Tool
+
+A full-stack engineering application for designing EOT (Electric Overhead Traveling) crane
+control panels — motor sizing, cable/busbar selection, circuit design, panel layout, BOM
+generation and a printable project report, with every calculation backed by a formula
+explanation, worked example, IS/IEC standard reference and objective engineering status.
+
+Live: Frontend on Vercel, API on Render (see **Deployment** below for reconnecting them
+after this update).
+
+---
+
+## Architecture
+
+```
+frontend/   React 19 + Vite + Tailwind v4 + Zustand + Framer Motion
+backend/    FastAPI — the single source of truth for every engineering calculation
+```
+
+**Every calculation happens on the backend.** The frontend never re-implements a formula —
+it calls one of five endpoints and renders whatever comes back (numbers, the objective
+"engineering status", and the full explanation object). This was the biggest structural
+change from the previous version, where the backend existed but was never actually called;
+all sizing logic was duplicated in frontend JS. See `backend/app/engineering.py` for the
+formulas, `backend/app/explain.py` for the explanations, and `backend/app/status.py` for the
+margin/compliance logic.
+
+```
+POST /api/motor          Motor HP, FLC, contactor/MPCB/cable/overload sizing (all 3 motions)
+POST /api/nameplate       Same sizing, starting from known nameplate values
+POST /api/star-delta      DOL vs star-delta current/torque comparison
+POST /api/cable-busbar    Cable sizing, voltage drop, busbar-vs-stretch-wire recommendation
+POST /api/bom             Full bill of materials
+```
+
+**Shared project state** (`frontend/src/store/projectStore.js`, Zustand + localStorage)
+lets data flow forward through the workflow — e.g. Load Calculator results prefill the BOM
+Generator — without making any page depend on it. Every page falls back to sensible defaults
+if the store is empty (fresh visit, direct link, private browsing), so nothing breaks if a
+step is skipped or opened standalone.
+
+**Pages that don't call the backend** (Crane Selector, Control/Power Circuit, Panel
+Simulator, Panel Layout, Fault Diagnosis) are interactive simulators and reference content,
+not numeric calculators — there's no formula to centralize, so they stay client-side.
+
+**PDF export** uses the browser's native print-to-PDF (`window.print()`) against a dedicated
+print stylesheet (`index.css` → `@media print`), rather than a client-side PDF-rendering
+library — more reliable output, real selectable text, and no extra dependency weight.
+
+---
+
+## Local development
+
+**Backend**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+API docs at `http://localhost:8000/docs`.
+
+**Frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Runs at `http://localhost:5173` and talks to `http://localhost:8000` by default (see
+`frontend/src/api/client.js`) — no `.env` needed for local dev.
+
+---
+
+## Environment variables
+
+| Where | Variable | Value |
+|---|---|---|
+| Vercel (frontend) | `VITE_API_URL` | Your Render backend URL, e.g. `https://crane-panel-api.onrender.com` |
+| Render (backend) | `ALLOWED_ORIGINS` | Your Vercel URL, e.g. `https://crane-panel-tool.vercel.app` (comma-separate multiple) |
+
+Without `VITE_API_URL` set, the deployed frontend will try to reach `localhost:8000` and every
+calculation will fail with a clear "could not reach the calculation server" message rather
+than a silent crash — check this first if calculations don't work after deploying.
+
+Without `ALLOWED_ORIGINS` set, the backend defaults to allowing all origins (`*`), which
+works but is worth tightening once your Vercel URL is stable.
+
+Render's free tier spins the backend down when idle — the first request after a period of
+inactivity can take 30–50s to wake it up. The frontend's API client already accounts for
+this with a 25s timeout and an explicit message instead of a generic error.
+
+---
+
+## Deployment
+
+### Backend → Render
+1. Root directory: `backend`
+2. Build command: `pip install -r requirements.txt`
+3. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. Environment: set `ALLOWED_ORIGINS` (see above)
+5. Python version comes from `backend/runtime.txt`
+
+### Frontend → Vercel
+1. Root directory: `frontend`
+2. Framework preset: Vite (auto-detected)
+3. Build command: `npm run build`, output directory: `dist`
+4. Environment: set `VITE_API_URL` (see above)
+
+After changing either environment variable, redeploy that service for it to take effect.
+
+---
+
+## Testing
+
+```bash
+cd frontend
+npm run lint              # ESLint — should report zero problems
+npm run build              # production build — should complete with no errors
+node ssr-smoke-test.mjs    # renders every page with an empty project store and
+                            # fails loudly if any page throws on a fresh/standalone visit
+```
+
+The backend has no separate test suite yet — `backend/app/engineering.py` is pure functions
+with no I/O, so it's straightforward to add `pytest` coverage for it directly if you want to
+extend this (each function takes plain numbers and returns a plain number).
+
+---
+
+## Pushing this update to Git
+
+From the project root, with your existing remote already configured:
+
+```bash
+git add -A
+git commit -m "Full-stack rebuild: backend-driven calculations, formula explanations, engineering status, workflow state, redesigned UI"
+git push origin main    # replace 'main' if your default branch has a different name
+```
+
+Vercel and Render will pick up the push automatically if they're already connected to this
+repo (both redeploy on push to the tracked branch by default).
+
+---
+
+## Project structure
+
+```
+backend/app/
+  main.py            FastAPI app, CORS, routers
+  config.py           ALLOWED_ORIGINS from env
+  models.py           Pydantic request validation (engineering-plausible bounds)
+  engineering.py       Pure calculation functions — the actual formulas
+  explain.py           Builds the formula/reasoning/standard/mistakes payload
+  status.py            Builds the safety-margin / sizing-status / compliance payload
+  data/standards.py    All constants, ratings tables, IS/IEC references — single source of truth
+  routers/             calculations.py, cable.py, bom.py
+
+frontend/src/
+  api/                 fetch client + typed endpoint wrappers
+  store/                Zustand project state (persisted, with safe fallbacks)
+  components/ui/        Shared design-system components (Button, Card, FormulaExplainer,
+                         EngineeringStatus, Toast, etc.)
+  components/layout/     Navbar, WorkflowStepper, PageTransition
+  pages/                 One file per route
+  lib/validate.js       Client-side validation mirroring the backend's bounds
+```

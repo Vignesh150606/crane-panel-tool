@@ -1,5 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
+import { ToastProvider } from './components/ui/Toast'
 import Navbar from './components/layout/Navbar'
+import WorkflowStepper from './components/layout/WorkflowStepper'
+import PageTransition from './components/layout/PageTransition'
+
 import Home from './pages/Home'
 import CraneSelector from './pages/CraneSelector'
 import LoadCalculator from './pages/LoadCalculator'
@@ -12,30 +17,58 @@ import StarDelta from './pages/StarDelta'
 import CableBusbar from './pages/CableBusbar'
 import PanelLayout from './pages/PanelLayout'
 import FaultDiagnosis from './pages/FaultDiagnosis'
-function App() {
+import ProjectReport from './pages/ProjectReport'
+
+function AnimatedRoutes() {
+  const location = useLocation()
   return (
-    <Router>
-      <div style={{ minHeight: '100vh', backgroundColor: '#0f1923' }}>
-        <Navbar />
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/cranes" element={<CraneSelector />} />
-            <Route path="/calculator" element={<LoadCalculator />} />
-            <Route path="/simulator" element={<PanelSimulator />} />
-            <Route path="/power-circuit" element={<PowerCircuit />} />
-            <Route path="/bom" element={<BOMGenerator />} />
-            <Route path="/nameplate" element={<NameplateCalculator />} />
-            <Route path="/control-circuit" element={<ControlCircuit />} />
-            <Route path="/star-delta" element={<StarDelta />} />
-            <Route path="/cable-busbar" element={<CableBusbar />} />
-            <Route path="/panel-layout" element={<PanelLayout />} />
-            <Route path="/fault-diagnosis" element={<FaultDiagnosis />} />
-          </Routes>
-        </div>
-      </div>
-    </Router>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+        <Route path="/cranes" element={<PageTransition><CraneSelector /></PageTransition>} />
+        <Route path="/calculator" element={<PageTransition><LoadCalculator /></PageTransition>} />
+        <Route path="/simulator" element={<PageTransition><PanelSimulator /></PageTransition>} />
+        <Route path="/power-circuit" element={<PageTransition><PowerCircuit /></PageTransition>} />
+        <Route path="/bom" element={<PageTransition><BOMGenerator /></PageTransition>} />
+        <Route path="/nameplate" element={<PageTransition><NameplateCalculator /></PageTransition>} />
+        <Route path="/control-circuit" element={<PageTransition><ControlCircuit /></PageTransition>} />
+        <Route path="/star-delta" element={<PageTransition><StarDelta /></PageTransition>} />
+        <Route path="/cable-busbar" element={<PageTransition><CableBusbar /></PageTransition>} />
+        <Route path="/panel-layout" element={<PageTransition><PanelLayout /></PageTransition>} />
+        <Route path="/fault-diagnosis" element={<PageTransition><FaultDiagnosis /></PageTransition>} />
+        <Route path="/report" element={<PageTransition><ProjectReport /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
   )
 }
 
-export default App
+function AppShell() {
+  const location = useLocation()
+  const isReport = location.pathname === '/report'
+
+  return (
+    <div className="min-h-screen">
+      <div className="no-print">
+        <Navbar />
+        {!isReport && (
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-3">
+            <WorkflowStepper />
+          </div>
+        )}
+      </div>
+      <div className={isReport ? '' : 'max-w-[1280px] mx-auto px-4 sm:px-6 py-8'}>
+        <AnimatedRoutes />
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Router>
+      <ToastProvider>
+        <AppShell />
+      </ToastProvider>
+    </Router>
+  )
+}

@@ -1,140 +1,111 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Zap, Play, Square, X, Ruler } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 
 const COMPONENTS = [
   { id: 'mcb', label: 'Main MCB', desc: 'Main Circuit Breaker — first protection point from incoming 3-phase supply', color: '#3b82f6', icon: '⊡' },
   { id: 'spp', label: 'SPP', desc: 'Single Phase Preventer — monitors phase balance, disconnects on phase loss/reversal', color: '#8b5cf6', icon: '⊞' },
-  { id: 'mpcb_h', label: 'MPCB Hoist', desc: 'Motor Protection CB for Hoist — sized at motor FLC, protects against overload', color: '#f59e0b', icon: '⊟' },
-  { id: 'cont_h', label: 'Contactor H', desc: 'Hoist contactors (Up/Down pair) — rated 3× FLC, controlled by relay circuit', color: '#ef4444', icon: '⊗' },
-  { id: 'motor_h', label: 'Hoist Motor', desc: 'Hoist motor — lifts and lowers load. Phase reversal changes direction.', color: '#22c55e', icon: 'M' },
-  { id: 'mpcb_lt', label: 'MPCB LT', desc: 'Motor Protection CB for Long Travel motor', color: '#f59e0b', icon: '⊟' },
-  { id: 'cont_lt', label: 'Contactor LT', desc: 'LT contactors (Fwd/Rev pair) — phase swap reverses motor direction', color: '#ef4444', icon: '⊗' },
-  { id: 'motor_lt', label: 'LT Motor', desc: 'Long Travel motor — moves crane bridge along runway', color: '#22c55e', icon: 'M' },
-  { id: 'mpcb_ct', label: 'MPCB CT', desc: 'Motor Protection CB for Cross Travel motor', color: '#f59e0b', icon: '⊟' },
-  { id: 'cont_ct', label: 'Contactor CT', desc: 'CT contactors (Left/Right pair)', color: '#ef4444', icon: '⊗' },
-  { id: 'motor_ct', label: 'CT Motor', desc: 'Cross Travel motor — moves crab across bridge', color: '#22c55e', icon: 'M' },
+  { id: 'mpcb_h', label: 'MPCB Hoist', desc: 'Motor Protection CB for Hoist — sized at motor FLC, protects against overload', color: '#f5a623', icon: '⊟' },
+  { id: 'cont_h', label: 'Contactor H', desc: 'Hoist contactors (Up/Down pair) — rated 3x FLC, controlled by relay circuit', color: '#f0453d', icon: '⊗' },
+  { id: 'motor_h', label: 'Hoist Motor', desc: 'Hoist motor — lifts and lowers load. Phase reversal changes direction.', color: '#3fb950', icon: 'M' },
+  { id: 'mpcb_lt', label: 'MPCB LT', desc: 'Motor Protection CB for Long Travel motor', color: '#f5a623', icon: '⊟' },
+  { id: 'cont_lt', label: 'Contactor LT', desc: 'LT contactors (Fwd/Rev pair) — phase swap reverses motor direction', color: '#f0453d', icon: '⊗' },
+  { id: 'motor_lt', label: 'LT Motor', desc: 'Long Travel motor — moves crane bridge along runway', color: '#3fb950', icon: 'M' },
+  { id: 'mpcb_ct', label: 'MPCB CT', desc: 'Motor Protection CB for Cross Travel motor', color: '#f5a623', icon: '⊟' },
+  { id: 'cont_ct', label: 'Contactor CT', desc: 'CT contactors (Left/Right pair)', color: '#f0453d', icon: '⊗' },
+  { id: 'motor_ct', label: 'CT Motor', desc: 'Cross Travel motor — moves crab across bridge', color: '#3fb950', icon: 'M' },
 ]
 
 export default function PowerCircuit() {
   const [highlighted, setHighlighted] = useState(null)
   const [animated, setAnimated] = useState(false)
-  const [currentPos, setCurrentPos] = useState(0)
 
-  useEffect(() => {
-    if (!animated) return
-    const interval = setInterval(() => {
-      setCurrentPos(p => (p + 1) % 100)
-    }, 50)
-    return () => clearInterval(interval)
-  }, [animated])
-
-  const comp = highlighted ? COMPONENTS.find(c => c.id === highlighted) : null
+  const comp = highlighted ? COMPONENTS.find((c) => c.id === highlighted) : null
+  const lineColor = animated ? 'var(--color-safe)' : 'var(--color-steel)'
+  const lineClass = animated ? 'wire-flow' : ''
 
   return (
-    <div style={{ width: '100%' }}>
-      <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>🔌 Power Circuit Visualizer</h1>
-      <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-        Visualize the complete power circuit from 3-phase supply to motors. Click any component for details.
-      </p>
+    <div>
+      <PageHeader
+        icon={Zap}
+        title="Power Circuit Visualizer"
+        description="Visualize the complete power circuit from 3-phase supply to motors. Click any component for details."
+      />
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => setAnimated(!animated)}
-          style={{ padding: '0.5rem 1.25rem', backgroundColor: animated ? '#22c55e' : '#2d3f50', border: 'none', borderRadius: '0.375rem', color: 'white', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem' }}
-        >
-          {animated ? '⏹ Stop' : '▶ Animate'} Current Flow
-        </button>
-        <button
-          onClick={() => setHighlighted(null)}
-          style={{ padding: '0.5rem 1.25rem', backgroundColor: '#2d3f50', border: 'none', borderRadius: '0.375rem', color: '#94a3b8', cursor: 'pointer', fontSize: '0.875rem' }}
-        >
-          Clear Selection
-        </button>
+      <div className="flex gap-2 mb-5 flex-wrap">
+        <Button variant={animated ? 'primary' : 'secondary'} icon={animated ? Square : Play} onClick={() => setAnimated(!animated)}>
+          {animated ? 'Stop' : 'Animate'} Current Flow
+        </Button>
+        <Button variant="secondary" icon={X} onClick={() => setHighlighted(null)}>Clear Selection</Button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem' }}>
-
-        {/* SVG Circuit */}
-        <div style={{ backgroundColor: '#1a2632', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #2d3f50' }}>
-          <svg width="100%" viewBox="0 0 600 480" style={{ fontFamily: 'monospace' }}>
-
-            {/* 3-Phase supply lines */}
-            <text x="10" y="30" fill="#94a3b8" fontSize="11">3-Phase 415V Supply</text>
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5">
+        <Card padding="lg" className="overflow-x-auto">
+          <svg width="600" height="480" viewBox="0 0 600 480" className="font-mono min-w-[560px]">
+            <text x="10" y="30" fill="var(--color-text-muted)" fontSize="11">3-Phase 415V Supply</text>
             {['R', 'Y', 'B'].map((phase, i) => (
               <g key={phase}>
-                <line x1="20" y1={50 + i * 12} x2="80" y2={50 + i * 12}
-                  stroke={['#ef4444', '#eab308', '#3b82f6'][i]} strokeWidth="3" />
+                <line x1="20" y1={50 + i * 12} x2="80" y2={50 + i * 12} stroke={['#ef4444', '#eab308', '#3b82f6'][i]} strokeWidth="3" />
                 <text x="8" y={54 + i * 12} fill={['#ef4444', '#eab308', '#3b82f6'][i]} fontSize="10" fontWeight="bold">{phase}</text>
               </g>
             ))}
 
-            {/* MCB */}
-            <PowerComponent x={80} y={35} w={60} h={45} id="mcb" label="MCB" icon="⊡"
-              highlighted={highlighted} onHover={setHighlighted} animated={animated} pos={currentPos} color="#3b82f6" />
-            <line x1="140" y1="57" x2="160" y2="57" stroke={animated ? '#22c55e' : '#2d3f50'} strokeWidth="3" />
+            <PowerComponent x={80} y={35} w={60} h={45} id="mcb" label="MCB" icon="⊡" highlighted={highlighted} onHover={setHighlighted} color="#3b82f6" />
+            <line x1="140" y1="57" x2="160" y2="57" stroke={lineColor} className={lineClass} strokeWidth="3" />
 
-            {/* SPP */}
-            <PowerComponent x={160} y={35} w={60} h={45} id="spp" label="SPP" icon="⊞"
-              highlighted={highlighted} onHover={setHighlighted} animated={animated} pos={currentPos} color="#8b5cf6" />
-            <line x1="220" y1="57" x2="240" y2="57" stroke={animated ? '#22c55e' : '#2d3f50'} strokeWidth="3" />
+            <PowerComponent x={160} y={35} w={60} h={45} id="spp" label="SPP" icon="⊞" highlighted={highlighted} onHover={setHighlighted} color="#8b5cf6" />
+            <line x1="220" y1="57" x2="240" y2="57" stroke={lineColor} className={lineClass} strokeWidth="3" />
 
-            {/* Distribution to 3 MPCBs */}
-            <line x1="240" y1="57" x2="240" y2="400" stroke={animated ? '#22c55e' : '#2d3f50'} strokeWidth="2" strokeDasharray={animated ? '8,4' : 'none'} />
+            <line x1="240" y1="57" x2="240" y2="400" stroke={lineColor} className={lineClass} strokeWidth="2" />
 
-            {/* Hoist branch */}
-            <BranchRow y={100} label="HOIST" highlighted={highlighted} onHover={setHighlighted} animated={animated} pos={currentPos}
-              mpcbId="mpcb_h" contId="cont_h" motorId="motor_h" />
-
-            {/* LT branch */}
-            <BranchRow y={240} label="LONG TRAVEL" highlighted={highlighted} onHover={setHighlighted} animated={animated} pos={currentPos}
-              mpcbId="mpcb_lt" contId="cont_lt" motorId="motor_lt" />
-
-            {/* CT branch */}
-            <BranchRow y={370} label="CROSS TRAVEL" highlighted={highlighted} onHover={setHighlighted} animated={animated} pos={currentPos}
-              mpcbId="mpcb_ct" contId="cont_ct" motorId="motor_ct" />
-
+            <BranchRow y={100} label="HOIST" highlighted={highlighted} onHover={setHighlighted} lineColor={lineColor} lineClass={lineClass} mpcbId="mpcb_h" contId="cont_h" motorId="motor_h" />
+            <BranchRow y={240} label="LONG TRAVEL" highlighted={highlighted} onHover={setHighlighted} lineColor={lineColor} lineClass={lineClass} mpcbId="mpcb_lt" contId="cont_lt" motorId="motor_lt" />
+            <BranchRow y={370} label="CROSS TRAVEL" highlighted={highlighted} onHover={setHighlighted} lineColor={lineColor} lineClass={lineClass} mpcbId="mpcb_ct" contId="cont_ct" motorId="motor_ct" />
           </svg>
-        </div>
+        </Card>
 
-        {/* Component Detail */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="flex flex-col gap-4">
           {comp ? (
-            <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.25rem', border: `2px solid ${comp.color}` }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem', textAlign: 'center' }}>{comp.icon}</div>
-              <h3 style={{ color: comp.color, fontWeight: '700', fontSize: '1rem', marginBottom: '0.75rem', textAlign: 'center' }}>{comp.label}</h3>
-              <p style={{ color: '#e2e8f0', fontSize: '0.875rem', lineHeight: '1.6' }}>{comp.desc}</p>
-            </div>
+            <Card style={{ borderColor: comp.color, borderWidth: 2 }}>
+              <div className="text-3xl mb-2 text-center">{comp.icon}</div>
+              <h3 className="font-bold text-center mb-3" style={{ color: comp.color }}>{comp.label}</h3>
+              <p className="text-text text-sm leading-relaxed">{comp.desc}</p>
+            </Card>
           ) : (
-            <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #2d3f50', textAlign: 'center' }}>
-              <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Click any component to see details</p>
-            </div>
+            <Card className="text-center">
+              <p className="text-text-dim text-sm">Click any component to see details</p>
+            </Card>
           )}
 
-          {/* Legend */}
-          <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #2d3f50' }}>
-            <h4 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Circuit Flow</h4>
+          <Card>
+            <h4 className="text-amber font-semibold text-sm mb-3">Circuit Flow</h4>
             {[
               { label: 'MCB', desc: 'Main protection', color: '#3b82f6' },
               { label: 'SPP', desc: 'Phase protection', color: '#8b5cf6' },
-              { label: 'MPCB', desc: 'Motor protection', color: '#f59e0b' },
-              { label: 'Contactor', desc: 'Direction switch', color: '#ef4444' },
-              { label: 'Motor', desc: 'Load drive', color: '#22c55e' },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color, flexShrink: 0 }} />
-                <span style={{ color: item.color, fontSize: '0.8rem', fontWeight: '600', minWidth: '70px' }}>{item.label}</span>
-                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{item.desc}</span>
+              { label: 'MPCB', desc: 'Motor protection', color: '#f5a623' },
+              { label: 'Contactor', desc: 'Direction switch', color: '#f0453d' },
+              { label: 'Motor', desc: 'Load drive', color: '#3fb950' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2 mb-1.5">
+                <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
+                <span className="text-xs font-semibold min-w-[70px]" style={{ color: item.color }}>{item.label}</span>
+                <span className="text-text-dim text-xs">{item.desc}</span>
               </div>
             ))}
-          </div>
+          </Card>
 
-          <div style={{ backgroundColor: '#0f1923', borderRadius: '0.75rem', padding: '1rem', border: '1px solid #2d3f50' }}>
-            <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.8rem', marginBottom: '0.5rem' }}>📐 Wiring Rule</div>
-            <p style={{ color: '#64748b', fontSize: '0.75rem', lineHeight: '1.6' }}>
+          <Card variant="inset">
+            <div className="flex items-center gap-1.5 text-amber font-semibold text-xs mb-2">
+              <Ruler size={13} /> Wiring Rule
+            </div>
+            <p className="text-text-dim text-xs leading-relaxed">
               Power and control wiring routed through separate cable ducts.
               100mm gap between ducts. 75mm between contactors.
               Phase reversal at reverse contactor output.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
@@ -144,30 +115,26 @@ export default function PowerCircuit() {
 function PowerComponent({ x, y, w, h, id, label, icon, highlighted, onHover, color }) {
   const isHighlighted = highlighted === id
   return (
-    <g onClick={() => onHover(id)} style={{ cursor: 'pointer' }}>
+    <g onClick={() => onHover(id)} style={{ cursor: 'pointer' }} className={isHighlighted ? 'animate-pulse' : ''}>
       <rect x={x} y={y} width={w} height={h} rx="6"
-        fill={isHighlighted ? color + '33' : '#0f1923'}
-        stroke={isHighlighted ? color : '#2d3f50'} strokeWidth={isHighlighted ? 2.5 : 1.5} />
-      <text x={x + w / 2} y={y + h / 2 - 4} textAnchor="middle" fill={isHighlighted ? color : '#94a3b8'} fontSize="14">{icon}</text>
-      <text x={x + w / 2} y={y + h / 2 + 12} textAnchor="middle" fill={isHighlighted ? color : '#64748b'} fontSize="9" fontWeight="bold">{label}</text>
+        fill={isHighlighted ? `${color}33` : 'var(--color-inset)'}
+        stroke={isHighlighted ? color : 'var(--color-steel)'} strokeWidth={isHighlighted ? 2.5 : 1.5} />
+      <text x={x + w / 2} y={y + h / 2 - 4} textAnchor="middle" fill={isHighlighted ? color : 'var(--color-text-muted)'} fontSize="14">{icon}</text>
+      <text x={x + w / 2} y={y + h / 2 + 12} textAnchor="middle" fill={isHighlighted ? color : 'var(--color-text-dim)'} fontSize="9" fontWeight="bold">{label}</text>
     </g>
   )
 }
 
-function BranchRow({ y, label, highlighted, onHover, animated, pos, mpcbId, contId, motorId }) {
-  const lineColor = animated ? '#22c55e' : '#2d3f50'
+function BranchRow({ y, label, highlighted, onHover, lineColor, lineClass, mpcbId, contId, motorId }) {
   return (
     <g>
-      <text x="248" y={y - 5} fill="#94a3b8" fontSize="10">{label}</text>
-      <line x1="240" y1={y + 22} x2="270" y2={y + 22} stroke={lineColor} strokeWidth="2" />
-      <PowerComponent x={270} y={y} w={70} h={45} id={mpcbId} label="MPCB" icon="⊟"
-        highlighted={highlighted} onHover={onHover} animated={animated} pos={pos} color="#f59e0b" />
-      <line x1="340" y1={y + 22} x2="360" y2={y + 22} stroke={lineColor} strokeWidth="2" />
-      <PowerComponent x={360} y={y} w={80} h={45} id={contId} label="CONTACTOR" icon="⊗"
-        highlighted={highlighted} onHover={onHover} animated={animated} pos={pos} color="#ef4444" />
-      <line x1="440" y1={y + 22} x2="460" y2={y + 22} stroke={lineColor} strokeWidth="2" />
-      <PowerComponent x={460} y={y} w={70} h={45} id={motorId} label="MOTOR" icon="M"
-        highlighted={highlighted} onHover={onHover} animated={animated} pos={pos} color="#22c55e" />
+      <text x="248" y={y - 5} fill="var(--color-text-muted)" fontSize="10">{label}</text>
+      <line x1="240" y1={y + 22} x2="270" y2={y + 22} stroke={lineColor} className={lineClass} strokeWidth="2" />
+      <PowerComponent x={270} y={y} w={70} h={45} id={mpcbId} label="MPCB" icon="⊟" highlighted={highlighted} onHover={onHover} color="#f5a623" />
+      <line x1="340" y1={y + 22} x2="360" y2={y + 22} stroke={lineColor} className={lineClass} strokeWidth="2" />
+      <PowerComponent x={360} y={y} w={80} h={45} id={contId} label="CONTACTOR" icon="⊗" highlighted={highlighted} onHover={onHover} color="#f0453d" />
+      <line x1="440" y1={y + 22} x2="460" y2={y + 22} stroke={lineColor} className={lineClass} strokeWidth="2" />
+      <PowerComponent x={460} y={y} w={70} h={45} id={motorId} label="MOTOR" icon="M" highlighted={highlighted} onHover={onHover} color="#3fb950" />
     </g>
   )
 }

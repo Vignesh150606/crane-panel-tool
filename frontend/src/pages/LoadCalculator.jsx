@@ -1,138 +1,178 @@
 import { useState } from 'react'
-import { CONTACTOR_RATINGS, MPCB_RATINGS, CABLE_SIZES, CABLE_CAPACITY, ENGINEERING_CONSTANTS } from '../data/craneData'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Calculator, ArrowUpDown, MoveHorizontal, MoveVertical, ArrowRight, Zap } from 'lucide-react'
 
-function calcMotorHP(loadTons, speed, efficiency = 0.85) {
-  const loadKg = loadTons * 1000
-  const speedMs = speed / 60
-  const powerW = (loadKg * 9.81 * speedMs) / efficiency
-  return powerW / 746
+import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
+import Card from '../components/ui/Card'
+import NumberField from '../components/ui/NumberField'
+import Toggle from '../components/ui/Toggle'
+import Button from '../components/ui/Button'
+import StatPlate from '../components/ui/StatPlate'
+import Badge from '../components/ui/Badge'
+import EngineeringStatus from '../components/ui/EngineeringStatus'
+import AssumedVsComputed from '../components/ui/AssumedVsComputed'
+import FormulaExplainer from '../components/ui/FormulaExplainer'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import EmptyState from '../components/ui/EmptyState'
+import Skeleton from '../components/ui/Skeleton'
+import { useToast } from '../hooks/useToast'
+import { useCountUp } from '../hooks/useCountUp'
+import { calcMotor } from '../api/calculations'
+import { validateFields, hasErrors, BOUNDS } from '../lib/validate'
+import { useProjectStore } from '../store/projectStore'
+
+const DEFAULTS = {
+  load: 5, hoistSpeed: 4, ltSpeed: 20, ctSpeed: 10,
+  hoistHP: '', ltHP: '', ctHP: '', useCustomHP: false,
 }
 
-function calcFLC(hp) {
-  const kw = hp * ENGINEERING_CONSTANTS.HP_TO_KW
-  return (kw * 1000) / (Math.sqrt(3) * ENGINEERING_CONSTANTS.VOLTAGE_3PHASE * ENGINEERING_CONSTANTS.POWER_FACTOR * ENGINEERING_CONSTANTS.EFFICIENCY_FACTOR)
-}
-
-function selectContactor(flc) {
-  const required = flc * ENGINEERING_CONSTANTS.CONTACTOR_RATING_MULTIPLIER
-  return CONTACTOR_RATINGS.find(r => r >= required) || CONTACTOR_RATINGS[CONTACTOR_RATINGS.length - 1]
-}
-
-function selectMPCB(flc) {
-  return MPCB_RATINGS.find(r => r >= flc) || MPCB_RATINGS[MPCB_RATINGS.length - 1]
-}
-
-function selectCable(flc) {
-  for (const size of CABLE_SIZES) {
-    if (CABLE_CAPACITY[size] >= flc * 1.25) return size
-  }
-  return CABLE_SIZES[CABLE_SIZES.length - 1]
+const MOTOR_META = {
+  hoist: { label: 'Hoist Motor', icon: ArrowUpDown },
+  lt: { label: 'Long Travel Motor', icon: MoveHorizontal },
+  ct: { label: 'Cross Travel Motor', icon: MoveVertical },
 }
 
 export default function LoadCalculator() {
-  const [inputs, setInputs] = useState({
-    load: 5,
-    hoistSpeed: 4,
-    ltSpeed: 20,
-    ctSpeed: 10,
-    hoistHP: '',
-    ltHP: '',
-    ctHP: '',
-    useCustomHP: false
-  })
-  const [results, setResults] = useState(null)
+  const navigate = useNavigate()
+  const toast = useToast()
+  const storedInputs = useProjectStore((s) => s.motorInputs)
+  const storedMotors = useProjectStore((s) => s.motors)
+  const setMotors = useProjectStore((s) => s.setMotors)
 
-  const update = (key, val) => setInputs(p => ({ ...p, [key]: val }))
+  const [inputs, setInputs] = useState(() => storedInputs || DEFAULTS)
+  const [results, setResults] = useState(storedMotors)
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState(null)
+  const [prefilled, setPrefilled] = useState(!!storedInputs)
 
-  const calculate = () => {
-    const hoistHP = inputs.useCustomHP ? parseFloat(inputs.hoistHP) : calcMotorHP(inputs.load, inputs.hoistSpeed)
-    const ltHP = inputs.useCustomHP ? parseFloat(inputs.ltHP) : calcMotorHP(inputs.load * 0.1, inputs.ltSpeed)
-    const ctHP = inputs.useCustomHP ? parseFloat(inputs.ctHP) : calcMotorHP(inputs.load * 0.05, inputs.ctSpeed)
+  const update = (key, val) => setInputs((p) => ({ ...p, [key]: val }))
 
-    const motors = { hoist: hoistHP, lt: ltHP, ct: ctHP }
-    const res = {}
-
-    for (const [name, hp] of Object.entries(motors)) {
-      const flc = calcFLC(hp)
-      res[name] = {
-        hp: hp.toFixed(2),
-        kw: (hp * ENGINEERING_CONSTANTS.HP_TO_KW).toFixed(2),
-        flc: flc.toFixed(2),
-        contactor: selectContactor(flc),
-        mpcb: selectMPCB(flc),
-        cable: selectCable(flc),
-        starDelta: hp > ENGINEERING_CONSTANTS.STAR_DELTA_THRESHOLD_HP
-      }
+  const validate = () => {
+    if (inputs.useCustomHP) {
+      return validateFields({
+        hoistHP: { value: inputs.hoistHP, label: 'Hoist HP', ...BOUNDS.hp },
+        ltHP: { value: inputs.ltHP, label: 'LT HP', ...BOUNDS.hp },
+        ctHP: { value: inputs.ctHP, label: 'CT HP', ...BOUNDS.hp },
+      })
     }
+    return validateFields({
+      load: { value: inputs.load, label: 'Rated load', ...BOUNDS.loadTons },
+      hoistSpeed: { value: inputs.hoistSpeed, label: 'Hoist speed', ...BOUNDS.speed },
+      ltSpeed: { value: inputs.ltSpeed, label: 'Long travel speed', ...BOUNDS.speed },
+      ctSpeed: { value: inputs.ctSpeed, label: 'Cross travel speed', ...BOUNDS.speed },
+    })
+  }
 
-    setResults(res)
+  const calculate = async () => {
+    const fieldErrors = validate()
+    setErrors(fieldErrors)
+    if (hasErrors(fieldErrors)) return
+
+    setLoading(true)
+    setApiError(null)
+    try {
+      const payload = {
+        load_tons: inputs.load,
+        hoist_speed: inputs.hoistSpeed,
+        lt_speed: inputs.ltSpeed,
+        ct_speed: inputs.ctSpeed,
+        ...(inputs.useCustomHP
+          ? {
+              hoist_hp_override: inputs.hoistHP,
+              lt_hp_override: inputs.ltHP,
+              ct_hp_override: inputs.ctHP,
+              // backend still requires speeds for shape consistency; use safe placeholders
+              load_tons: inputs.load || 0.1,
+            }
+          : {}),
+      }
+      const data = await calcMotor(payload)
+      setResults(data)
+      setMotors(inputs, data)
+      toast.success('Motor ratings calculated')
+    } catch (err) {
+      setApiError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div style={{ width: '100%' }}>
-      <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>⚡ Load Calculator</h1>
-      <p style={{ color: '#64748b', marginBottom: '2rem' }}>Enter crane load and speeds to calculate motor HP, contactor ratings, MPCB sizing, and cable size.</p>
+    <div>
+      <PageHeader
+        icon={Calculator}
+        title="Load Calculator"
+        description="Enter crane load and speeds to calculate motor HP, contactor ratings, MPCB sizing, and cable size — every result computed server-side against IS/IEC standards."
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      {prefilled && (
+        <PrefillBanner
+          message="Inputs restored from your last calculation in this project."
+          onDismiss={() => { setInputs(DEFAULTS); setPrefilled(false) }}
+        />
+      )}
 
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
         {/* Inputs */}
-        <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #2d3f50' }}>
-          <h2 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '1.5rem' }}>Input Parameters</h2>
+        <Card>
+          <h2 className="font-display text-amber font-semibold mb-4">Input Parameters</h2>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ color: '#94a3b8', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <input type="checkbox" checked={inputs.useCustomHP} onChange={e => update('useCustomHP', e.target.checked)} />
-              Use custom motor HP (override calculation)
-            </label>
+          <div className="mb-4">
+            <Toggle
+              checked={inputs.useCustomHP}
+              onChange={(v) => update('useCustomHP', v)}
+              label="Use custom motor HP"
+              description="Override the mechanical calculation and enter known HP directly"
+            />
           </div>
 
           {!inputs.useCustomHP ? (
             <>
-              <InputField label="Rated Load (Tons)" value={inputs.load} onChange={v => update('load', v)} unit="T" min={0.5} max={500} step={0.5} />
-              <InputField label="Hoist Speed" value={inputs.hoistSpeed} onChange={v => update('hoistSpeed', v)} unit="m/min" min={1} max={30} />
-              <InputField label="Long Travel Speed" value={inputs.ltSpeed} onChange={v => update('ltSpeed', v)} unit="m/min" min={5} max={80} />
-              <InputField label="Cross Travel Speed" value={inputs.ctSpeed} onChange={v => update('ctSpeed', v)} unit="m/min" min={5} max={40} />
+              <NumberField label="Rated Load" value={inputs.load} onChange={(v) => update('load', v)} unit="tonnes" min={0.5} max={500} step={0.5} error={errors.load} />
+              <NumberField label="Hoist Speed" value={inputs.hoistSpeed} onChange={(v) => update('hoistSpeed', v)} unit="m/min" min={1} max={30} error={errors.hoistSpeed} />
+              <NumberField label="Long Travel Speed" value={inputs.ltSpeed} onChange={(v) => update('ltSpeed', v)} unit="m/min" min={5} max={80} error={errors.ltSpeed} />
+              <NumberField label="Cross Travel Speed" value={inputs.ctSpeed} onChange={(v) => update('ctSpeed', v)} unit="m/min" min={5} max={40} error={errors.ctSpeed} />
             </>
           ) : (
             <>
-              <InputField label="Hoist Motor HP" value={inputs.hoistHP} onChange={v => update('hoistHP', v)} unit="HP" />
-              <InputField label="LT Motor HP" value={inputs.ltHP} onChange={v => update('ltHP', v)} unit="HP" />
-              <InputField label="CT Motor HP" value={inputs.ctHP} onChange={v => update('ctHP', v)} unit="HP" />
+              <NumberField label="Hoist Motor HP" value={inputs.hoistHP} onChange={(v) => update('hoistHP', v)} unit="HP" error={errors.hoistHP} />
+              <NumberField label="LT Motor HP" value={inputs.ltHP} onChange={(v) => update('ltHP', v)} unit="HP" error={errors.ltHP} />
+              <NumberField label="CT Motor HP" value={inputs.ctHP} onChange={(v) => update('ctHP', v)} unit="HP" error={errors.ctHP} />
             </>
           )}
 
-          <button
-            onClick={calculate}
-            style={{ width: '100%', backgroundColor: '#f59e0b', color: 'black', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', marginTop: '1rem' }}
-          >
-            Calculate Ratings
-          </button>
+          <Button className="w-full mt-2" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
+            {loading ? 'Calculating…' : 'Calculate Ratings'}
+          </Button>
 
-          <div style={{ marginTop: '1.5rem', backgroundColor: '#0f1923', borderRadius: '0.5rem', padding: '1rem' }}>
-            <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.5rem' }}>📐 Formulas Used</div>
-            <div style={{ color: '#64748b', fontSize: '0.75rem', lineHeight: '1.8' }}>
-              <div>Power (W) = (Load × g × Speed) ÷ η</div>
-              <div>HP = Power ÷ 746</div>
-              <div>FLC = (kW × 1000) ÷ (√3 × V × PF × η)</div>
-              <div>Contactor = 3 × FLC (IS standard)</div>
-              <div>Star-Delta if HP &gt; 5 HP</div>
-            </div>
-          </div>
-        </div>
+          {apiError && <div className="mt-3"><ErrorBanner message={apiError} onRetry={calculate} retrying={loading} /></div>}
+        </Card>
 
         {/* Results */}
         <div>
-          {results ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {Object.entries(results).map(([motor, data]) => (
-                <MotorResultCard key={motor} motor={motor} data={data} />
-              ))}
+          {loading ? (
+            <div className="space-y-4">
+              <Card><Skeleton rows={4} className="h-5" /></Card>
+              <Card><Skeleton rows={4} className="h-5" /></Card>
             </div>
+          ) : results ? (
+            <>
+              <div className="flex flex-col gap-4 mb-4">
+                {Object.entries(results.motors).map(([key, data]) => (
+                  <MotorResultCard key={key} motorKey={key} data={data} />
+                ))}
+              </div>
+              <AssumedVsComputed assumptions={results.assumptions} />
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" icon={ArrowRight} iconPosition="right" onClick={() => navigate('/cable-busbar')}>
+                  Continue to Cable & Busbar Sizing
+                </Button>
+              </div>
+            </>
           ) : (
-            <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '3rem', border: '1px solid #2d3f50', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚡</div>
-              <p style={{ color: '#64748b' }}>Enter parameters and click Calculate</p>
-            </div>
+            <EmptyState icon={Calculator} title="No results yet" description="Enter parameters on the left and click Calculate Ratings to see motor sizing, protection and formula breakdowns." />
           )}
         </div>
       </div>
@@ -140,55 +180,50 @@ export default function LoadCalculator() {
   )
 }
 
-function InputField({ label, value, onChange, unit, min, max, step = 1 }) {
-  return (
-    <div style={{ marginBottom: '1rem' }}>
-      <label style={{ color: '#94a3b8', fontSize: '0.875rem', display: 'block', marginBottom: '0.4rem' }}>{label}</label>
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onChange={e => onChange(parseFloat(e.target.value))}
-          style={{ flex: 1, backgroundColor: '#0f1923', border: '1px solid #2d3f50', borderRadius: '0.375rem', padding: '0.5rem', color: 'white', fontSize: '0.875rem' }}
-        />
-        <span style={{ color: '#f59e0b', fontSize: '0.875rem', minWidth: '3rem' }}>{unit}</span>
-      </div>
-    </div>
-  )
-}
+function MotorResultCard({ motorKey, data }) {
+  const meta = MOTOR_META[motorKey]
+  const Icon = meta.icon
+  const hp = useCountUp(data.hp)
+  const flc = useCountUp(data.flc)
 
-function MotorResultCard({ motor, data }) {
-  const labels = { hoist: '🔼 Hoist Motor', lt: '↔️ Long Travel Motor', ct: '↕️ Cross Travel Motor' }
   return (
-    <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #2d3f50' }}>
-      <h3 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '1rem' }}>{labels[motor]}</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
-        <Stat label="Motor HP" value={`${data.hp} HP`} />
-        <Stat label="Motor kW" value={`${data.kw} kW`} />
-        <Stat label="Full Load Current" value={`${data.flc} A`} />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-        <Stat label="Contactor" value={`${data.contactor} A`} highlight />
-        <Stat label="MPCB" value={`${data.mpcb} A`} highlight />
-        <Stat label="Cable Size" value={`${data.cable} mm²`} highlight />
-      </div>
-      {data.starDelta && (
-        <div style={{ marginTop: '0.75rem', backgroundColor: '#0f1923', borderRadius: '0.375rem', padding: '0.5rem', border: '1px solid #f59e0b' }}>
-          <span style={{ color: '#f59e0b', fontSize: '0.8rem', fontWeight: '600' }}>⚠ Star-Delta Starting Required (HP &gt; 5)</span>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      <Card variant="computed">
+        <div className="flex items-center justify-between mb-3.5">
+          <h3 className="font-display font-semibold text-text flex items-center gap-2">
+            <Icon size={17} className="text-copper" />
+            {meta.label}
+          </h3>
+          {data.star_delta_required && <Badge tone="caution">Star-Delta Required</Badge>}
+          {data.hp_was_override && <Badge tone="info" dot={false}>Custom HP</Badge>}
         </div>
-      )}
-    </div>
-  )
-}
 
-function Stat({ label, value, highlight }) {
-  return (
-    <div style={{ backgroundColor: '#0f1923', padding: '0.6rem', borderRadius: '0.375rem', textAlign: 'center' }}>
-      <div style={{ color: '#64748b', fontSize: '0.7rem', marginBottom: '0.2rem' }}>{label}</div>
-      <div style={{ color: highlight ? '#22c55e' : '#e2e8f0', fontWeight: '600', fontSize: '0.85rem' }}>{value}</div>
-    </div>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <StatPlate label="Motor HP" value={hp.toFixed(2)} unit="HP" />
+          <StatPlate label="Motor kW" value={data.kw} unit="kW" />
+          <StatPlate label="Full Load Current" value={flc.toFixed(2)} unit="A" tone="amber" />
+        </div>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <StatPlate label="Contactor" value={data.contactor_rating} unit="A" tone="safe" />
+          <StatPlate label="MPCB" value={data.mpcb_rating} unit="A" tone="safe" />
+          <StatPlate label="Cable Size" value={data.cable_size} unit="mm²" tone="safe" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+          <EngineeringStatus label="Contactor margin" status={data.status.contactor} />
+          <EngineeringStatus label="MPCB margin" status={data.status.mpcb} />
+          <EngineeringStatus label="Cable margin" status={data.status.cable} />
+        </div>
+
+        <div className="space-y-2">
+          {data.explanations.motor_hp && <FormulaExplainer title="Why this HP?" explanation={data.explanations.motor_hp} />}
+          <FormulaExplainer title="Why this FLC?" explanation={data.explanations.flc} />
+          <FormulaExplainer title="Why this contactor rating?" explanation={data.explanations.contactor} />
+          <FormulaExplainer title="Why this MPCB rating?" explanation={data.explanations.mpcb} />
+          <FormulaExplainer title="Why this overload setting?" explanation={data.explanations.overload} />
+          <FormulaExplainer title="Why this cable size?" explanation={data.explanations.cable} />
+        </div>
+      </Card>
+    </motion.div>
   )
 }

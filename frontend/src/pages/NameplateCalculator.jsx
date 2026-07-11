@@ -1,158 +1,167 @@
 import { useState } from 'react'
-import { CONTACTOR_RATINGS, MPCB_RATINGS, CABLE_SIZES, CABLE_CAPACITY, ENGINEERING_CONSTANTS } from '../data/craneData'
+import { motion } from 'framer-motion'
+import { Tag, Zap, AlertTriangle } from 'lucide-react'
+
+import PageHeader from '../components/ui/PageHeader'
+import Card from '../components/ui/Card'
+import NumberField from '../components/ui/NumberField'
+import Toggle from '../components/ui/Toggle'
+import Button from '../components/ui/Button'
+import StatPlate from '../components/ui/StatPlate'
+import EngineeringStatus from '../components/ui/EngineeringStatus'
+import FormulaExplainer from '../components/ui/FormulaExplainer'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import EmptyState from '../components/ui/EmptyState'
+import { useToast } from '../hooks/useToast'
+import { calcNameplate } from '../api/calculations'
+import { validateFields, hasErrors, BOUNDS } from '../lib/validate'
+import { useProjectStore } from '../store/projectStore'
+
+const DEFAULTS = { voltage: 415, current: 10, hp: 7.5, kw: 5.5, rpm: 1440, pf: 0.85, useHP: true }
 
 export default function NameplateCalculator() {
-  const [inputs, setInputs] = useState({ voltage: 415, current: 10, hp: 0, kw: 0, rpm: 1440, pf: 0.85, useHP: true })
-  const [results, setResults] = useState(null)
+  const toast = useToast()
+  const storedNameplate = useProjectStore((s) => s.nameplate)
+  const setNameplate = useProjectStore((s) => s.setNameplate)
 
-  const update = (k, v) => setInputs(p => ({ ...p, [k]: v }))
+  const [inputs, setInputs] = useState(() => storedNameplate?.inputs || DEFAULTS)
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState(null)
+  const [result, setResult] = useState(storedNameplate?.result || null)
 
-  const calculate = () => {
-    let hp = inputs.useHP ? parseFloat(inputs.hp) : parseFloat(inputs.kw) / ENGINEERING_CONSTANTS.HP_TO_KW
-    let kw = hp * ENGINEERING_CONSTANTS.HP_TO_KW
-    const flc = parseFloat(inputs.current)
-    const contRating = CONTACTOR_RATINGS.find(r => r >= flc * 3) || CONTACTOR_RATINGS[CONTACTOR_RATINGS.length - 1]
-    const mpcbRating = MPCB_RATINGS.find(r => r >= flc) || MPCB_RATINGS[MPCB_RATINGS.length - 1]
-    const overloadSetting = (flc * 1.05).toFixed(1)
-    const cableSize = CABLE_SIZES.find(s => CABLE_CAPACITY[s] >= flc * 1.25) || CABLE_SIZES[CABLE_SIZES.length - 1]
-    const starDelta = hp > 5
-    const inrushCurrent = (flc * 6).toFixed(1)
+  const update = (k, v) => setInputs((p) => ({ ...p, [k]: v }))
 
-    setResults({
-      hp: hp.toFixed(2), kw: kw.toFixed(2), flc: flc.toFixed(2),
-      contRating, mpcbRating, overloadSetting, cableSize,
-      starDelta, inrushCurrent,
-      starCurrentReduction: (flc * 6 / 3).toFixed(1)
+  const calculate = async () => {
+    const fieldErrors = validateFields({
+      voltage: { value: inputs.voltage, label: 'Voltage', ...BOUNDS.voltage },
+      current: { value: inputs.current, label: 'Full load current', ...BOUNDS.current },
+      [inputs.useHP ? 'hp' : 'kw']: { value: inputs.useHP ? inputs.hp : inputs.kw, label: inputs.useHP ? 'Power (HP)' : 'Power (kW)', ...BOUNDS.hp },
+      rpm: { value: inputs.rpm, label: 'Speed', ...BOUNDS.rpm },
+      pf: { value: inputs.pf, label: 'Power factor', ...BOUNDS.powerFactor },
     })
+    setErrors(fieldErrors)
+    if (hasErrors(fieldErrors)) return
+
+    setLoading(true)
+    setApiError(null)
+    try {
+      const data = await calcNameplate({
+        voltage: inputs.voltage, current: inputs.current, use_hp: inputs.useHP,
+        hp: inputs.useHP ? inputs.hp : undefined, kw: !inputs.useHP ? inputs.kw : undefined,
+        rpm: inputs.rpm, power_factor: inputs.pf,
+      })
+      setResult(data)
+      setNameplate(inputs, data)
+      toast.success('Component ratings calculated')
+    } catch (err) {
+      setApiError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div style={{ width: '100%' }}>
-      <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>🔧 Nameplate Calculator</h1>
-      <p style={{ color: '#64748b', marginBottom: '2rem' }}>
-        Enter motor nameplate values to get contactor rating, MPCB setting, overload relay setting, and cable size.
-        Based on the 3× FLC rule and IS standards.
-      </p>
+    <div>
+      <PageHeader
+        icon={Tag}
+        title="Nameplate Calculator"
+        description="Enter motor nameplate values to get contactor rating, MPCB setting, overload relay setting, and cable size — based on the 3x FLC rule and IS standards."
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-
-        {/* Input */}
-        <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #2d3f50' }}>
-          <h2 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '1.5rem' }}>Motor Nameplate Data</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <h2 className="font-display text-amber font-semibold mb-4">Motor Nameplate Data</h2>
 
           {/* Nameplate visual */}
-          <div style={{ backgroundColor: '#0f1923', border: '2px solid #2d3f50', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1.5rem', fontFamily: 'monospace' }}>
-            <div style={{ color: '#f59e0b', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem', fontSize: '0.8rem' }}>MOTOR NAMEPLATE</div>
+          <div className="bg-inset border-2 border-steel rounded-lg p-4 mb-5 font-mono">
+            <div className="text-amber font-bold text-center mb-2 text-sm tracking-wide">MOTOR NAMEPLATE</div>
             {[
               { label: 'Voltage', value: `${inputs.voltage} V` },
               { label: 'Current', value: `${inputs.current} A` },
               { label: 'Speed', value: `${inputs.rpm} RPM` },
               { label: 'Power Factor', value: inputs.pf },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.75rem', marginBottom: '0.2rem' }}>
+            ].map((item) => (
+              <div key={item.label} className="flex justify-between text-text-muted text-xs mb-1">
                 <span>{item.label}:</span>
-                <span style={{ color: '#e2e8f0' }}>{item.value}</span>
+                <span className="text-text">{item.value}</span>
               </div>
             ))}
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ color: '#94a3b8', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <input type="checkbox" checked={inputs.useHP} onChange={e => update('useHP', e.target.checked)} />
-              Enter power in HP (uncheck for kW)
-            </label>
+          <div className="mb-3">
+            <Toggle checked={inputs.useHP} onChange={(v) => update('useHP', v)} label="Enter power in HP" description="Uncheck to enter kW instead" />
           </div>
 
-          {[
-            { label: 'Voltage (V)', key: 'voltage', min: 110, max: 690 },
-            { label: 'Full Load Current (A)', key: 'current', min: 0.1, max: 500, step: 0.1 },
-            { label: inputs.useHP ? 'Power (HP)' : 'Power (kW)', key: inputs.useHP ? 'hp' : 'kw', min: 0.1, max: 500, step: 0.1 },
-            { label: 'Speed (RPM)', key: 'rpm', min: 500, max: 3000 },
-            { label: 'Power Factor', key: 'pf', min: 0.5, max: 1.0, step: 0.01 },
-          ].map(field => (
-            <div key={field.key} style={{ marginBottom: '0.75rem' }}>
-              <label style={{ color: '#94a3b8', fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>{field.label}</label>
-              <input
-                type="number"
-                value={inputs[field.key]}
-                min={field.min}
-                max={field.max}
-                step={field.step || 1}
-                onChange={e => update(field.key, e.target.value)}
-                style={{ width: '100%', backgroundColor: '#0f1923', border: '1px solid #2d3f50', borderRadius: '0.375rem', padding: '0.5rem', color: 'white' }}
-              />
-            </div>
-          ))}
+          <NumberField label="Voltage" value={inputs.voltage} onChange={(v) => update('voltage', v)} unit="V" min={110} max={690} error={errors.voltage} />
+          <NumberField label="Full Load Current" value={inputs.current} onChange={(v) => update('current', v)} unit="A" min={0.1} max={500} step={0.1} error={errors.current} />
+          {inputs.useHP ? (
+            <NumberField label="Power (HP)" value={inputs.hp} onChange={(v) => update('hp', v)} unit="HP" min={0.1} max={500} step={0.1} error={errors.hp} />
+          ) : (
+            <NumberField label="Power (kW)" value={inputs.kw} onChange={(v) => update('kw', v)} unit="kW" min={0.1} max={373} step={0.1} error={errors.kw} />
+          )}
+          <NumberField label="Speed" value={inputs.rpm} onChange={(v) => update('rpm', v)} unit="RPM" min={500} max={3000} error={errors.rpm} />
+          <NumberField label="Power Factor" value={inputs.pf} onChange={(v) => update('pf', v)} min={0.5} max={1.0} step={0.01} error={errors.pf} />
 
-          <button
-            onClick={calculate}
-            style={{ width: '100%', backgroundColor: '#f59e0b', color: 'black', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', fontWeight: '700', cursor: 'pointer', marginTop: '0.5rem' }}
-          >
-            Calculate Component Ratings
-          </button>
-        </div>
+          <Button className="w-full mt-2" icon={Zap} onClick={calculate} disabled={loading}>
+            {loading ? 'Calculating…' : 'Calculate Component Ratings'}
+          </Button>
+          {apiError && <div className="mt-3"><ErrorBanner message={apiError} onRetry={calculate} retrying={loading} /></div>}
+        </Card>
 
-        {/* Results */}
         <div>
-          {results ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-              <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #2d3f50' }}>
-                <h3 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '1rem' }}>Component Ratings</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  {[
-                    { label: 'Motor Power', value: `${results.hp} HP / ${results.kw} kW`, color: '#94a3b8' },
-                    { label: 'Full Load Current', value: `${results.flc} A`, color: '#e2e8f0' },
-                    { label: 'Contactor Rating', value: `${results.contRating} A`, color: '#22c55e', note: '(3× FLC rule)' },
-                    { label: 'MPCB Rating', value: `${results.mpcbRating} A`, color: '#22c55e' },
-                    { label: 'Overload Setting', value: `${results.overloadSetting} A`, color: '#f59e0b' },
-                    { label: 'Cable Size', value: `${results.cableSize} mm²`, color: '#3b82f6' },
-                  ].map(item => (
-                    <div key={item.label} style={{ backgroundColor: '#0f1923', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                      <div style={{ color: '#64748b', fontSize: '0.7rem', marginBottom: '0.25rem' }}>{item.label}</div>
-                      <div style={{ color: item.color, fontWeight: '700', fontSize: '0.9rem' }}>{item.value}</div>
-                      {item.note && <div style={{ color: '#64748b', fontSize: '0.65rem' }}>{item.note}</div>}
-                    </div>
-                  ))}
+          {result ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-4">
+              <Card variant="computed">
+                <h3 className="font-display text-amber font-semibold mb-3">Component Ratings</h3>
+                <div className="grid grid-cols-2 gap-2.5 mb-4">
+                  <StatPlate label="Motor Power" value={`${result.hp} HP`} note={`${result.kw} kW`} />
+                  <StatPlate label="Full Load Current" value={result.flc} unit="A" />
+                  <StatPlate label="Contactor Rating" value={result.contactor_rating} unit="A" tone="safe" note="3x FLC rule" />
+                  <StatPlate label="MPCB Rating" value={result.mpcb_rating} unit="A" tone="safe" />
+                  <StatPlate label="Overload Setting" value={result.overload_setting} unit="A" tone="amber" />
+                  <StatPlate label="Cable Size" value={result.cable_size} unit="mm²" tone="info" />
                 </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <EngineeringStatus label="Contactor" status={result.status.contactor} />
+                  <EngineeringStatus label="MPCB" status={result.status.mpcb} />
+                  <EngineeringStatus label="Cable" status={result.status.cable} />
+                </div>
+              </Card>
 
-              {results.starDelta && (
-                <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '1.25rem', border: '2px solid #f59e0b' }}>
-                  <h3 style={{ color: '#f59e0b', fontWeight: '600', marginBottom: '0.75rem' }}>⚡ Star-Delta Starter Required</h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '0.75rem' }}>Motor HP {'>'} 5 HP — Direct-on-line starting would cause high inrush current.</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem' }}>
-                    <div style={{ backgroundColor: '#0f1923', padding: '0.6rem', borderRadius: '0.375rem' }}>
-                      <div style={{ color: '#64748b', fontSize: '0.7rem' }}>DOL Inrush Current</div>
-                      <div style={{ color: '#ef4444', fontWeight: '700' }}>{results.inrushCurrent} A</div>
+              {result.star_delta_required && (
+                <Card variant="highlight">
+                  <h3 className="font-display text-amber font-semibold mb-2 flex items-center gap-2">
+                    <AlertTriangle size={16} /> Star-Delta Starter Required
+                  </h3>
+                  <p className="text-text-muted text-sm mb-3">Motor HP exceeds 5 HP — direct-on-line starting would cause high inrush current.</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                    <div className="bg-inset rounded-md p-2.5">
+                      <div className="text-text-dim text-xs">DOL Inrush Current</div>
+                      <div className="text-danger font-bold font-mono">{result.dol_inrush} A</div>
                     </div>
-                    <div style={{ backgroundColor: '#0f1923', padding: '0.6rem', borderRadius: '0.375rem' }}>
-                      <div style={{ color: '#64748b', fontSize: '0.7rem' }}>Star Start Inrush</div>
-                      <div style={{ color: '#22c55e', fontWeight: '700' }}>{results.starCurrentReduction} A</div>
+                    <div className="bg-inset rounded-md p-2.5">
+                      <div className="text-text-dim text-xs">Star Start Inrush</div>
+                      <div className="text-safe font-bold font-mono">{result.star_inrush} A</div>
                     </div>
                   </div>
-                  <div style={{ marginTop: '0.75rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#94a3b8', lineHeight: '1.8' }}>
+                  <div className="font-mono text-xs text-text-muted leading-relaxed mb-3">
                     <div>STAR: U2-V2-W2 shorted → reduced voltage</div>
                     <div>DELTA: U1→W2, V1→U2, W1→V2 → full voltage</div>
                   </div>
-                </div>
+                  {result.explanations.star_delta && <FormulaExplainer title="Why star-delta here?" explanation={result.explanations.star_delta} />}
+                </Card>
               )}
 
-              <div style={{ backgroundColor: '#0f1923', borderRadius: '0.75rem', padding: '1rem', border: '1px solid #2d3f50' }}>
-                <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.5rem' }}>📐 Calculation Basis</div>
-                <div style={{ color: '#64748b', fontSize: '0.75rem', lineHeight: '1.8' }}>
-                  <div>Contactor = 3 × FLC = 3 × {results.flc} = {(results.flc * 3).toFixed(1)} A → {results.contRating} A (next standard)</div>
-                  <div>MPCB = FLC = {results.flc} A → {results.mpcbRating} A (next standard)</div>
-                  <div>Overload = 105% × FLC = {results.overloadSetting} A</div>
-                  <div>Cable = 125% × FLC for derating = {(results.flc * 1.25).toFixed(1)} A → {results.cableSize} mm²</div>
-                </div>
+              <div className="space-y-2">
+                <FormulaExplainer title="Why this contactor rating?" explanation={result.explanations.contactor} />
+                <FormulaExplainer title="Why this MPCB rating?" explanation={result.explanations.mpcb} />
+                <FormulaExplainer title="Why this overload setting?" explanation={result.explanations.overload} />
+                <FormulaExplainer title="Why this cable size?" explanation={result.explanations.cable} />
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div style={{ backgroundColor: '#1a2632', borderRadius: '0.75rem', padding: '3rem', border: '1px solid #2d3f50', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔧</div>
-              <p style={{ color: '#64748b' }}>Enter nameplate values and click Calculate</p>
-            </div>
+            <EmptyState icon={Tag} title="No results yet" description="Enter nameplate values on the left and click Calculate." />
           )}
         </div>
       </div>

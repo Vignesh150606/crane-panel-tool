@@ -1,69 +1,116 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Home, Factory, Calculator, Cable, CircuitBoard, LayoutGrid, ClipboardList,
+  FileText, Tag, Triangle, Zap, Gamepad2, Search, Menu, X,
+} from 'lucide-react'
 
-
-const navItems = [
-  { path: '/', label: 'Home' },
-  { path: '/cranes', label: 'Cranes' },
-  { path: '/calculator', label: 'Load Calc' },
-  { path: '/simulator', label: 'Panel Sim' },
-  { path: '/control-circuit', label: 'Control Circuit' },
-  { path: '/power-circuit', label: 'Power Circuit' },
-  { path: '/star-delta', label: 'Star-Delta' },
-  { path: '/cable-busbar', label: 'Cable/Busbar' },
-  { path: '/panel-layout', label: 'Panel Layout' },
-  { path: '/fault-diagnosis', label: 'Fault Diagnosis' },
-  { path: '/bom', label: 'BOM' },
-  { path: '/nameplate', label: 'Nameplate' },
+const WORKFLOW_ITEMS = [
+  { path: '/cranes', label: 'Crane Selector', icon: Factory },
+  { path: '/calculator', label: 'Load Calculator', icon: Calculator },
+  { path: '/cable-busbar', label: 'Cable & Busbar', icon: Cable },
+  { path: '/control-circuit', label: 'Control Circuit', icon: CircuitBoard },
+  { path: '/panel-layout', label: 'Panel Layout', icon: LayoutGrid },
+  { path: '/bom', label: 'BOM Generator', icon: ClipboardList },
+  { path: '/report', label: 'Project Report', icon: FileText },
 ]
 
+const REFERENCE_ITEMS = [
+  { path: '/nameplate', label: 'Nameplate Calculator', icon: Tag },
+  { path: '/star-delta', label: 'Star-Delta', icon: Triangle },
+  { path: '/power-circuit', label: 'Power Circuit', icon: Zap },
+  { path: '/simulator', label: 'Panel Simulator', icon: Gamepad2 },
+  { path: '/fault-diagnosis', label: 'Fault Diagnosis', icon: Search },
+]
+
+function NavLink({ item, active, onClick }) {
+  const Icon = item.icon
+  return (
+    <Link
+      to={item.path}
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors shrink-0
+        ${active ? 'bg-amber text-ink font-semibold' : 'text-text-muted hover:text-text hover:bg-surface-hover'}`}
+    >
+      <Icon size={14} strokeWidth={2} />
+      {item.label}
+    </Link>
+  )
+}
 
 export default function Navbar() {
   const location = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const isActive = (path) => location.pathname === path
 
   return (
-    <nav style={{
-      backgroundColor: '#1a2632',
-      borderBottom: '1px solid #2d3f50',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: '64px'
-      }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-          <span style={{ color: '#f59e0b', fontSize: '1.5rem' }}>⚙</span>
-          <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>CranePanel Pro</span>
-        </Link>
+    <header className="sticky top-0 z-50 bg-ink/95 backdrop-blur border-b border-steel">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
+        <div className="h-16 flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber to-copper flex items-center justify-center">
+              <Zap size={16} className="text-ink" strokeWidth={2.5} />
+            </div>
+            <div className="leading-none">
+              <div className="font-display font-semibold text-sm text-text">Crane Panel</div>
+              <div className="text-[0.65rem] text-text-dim tracking-wide">DESIGN TOOL</div>
+            </div>
+          </Link>
 
-        <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto' }}>
-          {navItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                fontSize: '0.875rem',
-                whiteSpace: 'nowrap',
-                textDecoration: 'none',
-                backgroundColor: location.pathname === item.path ? '#f59e0b' : 'transparent',
-                color: location.pathname === item.path ? 'black' : '#94a3b8',
-                fontWeight: location.pathname === item.path ? '600' : '400',
-                transition: 'all 0.2s'
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {/* Desktop nav */}
+          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto">
+            <NavLink item={{ path: '/', label: 'Home', icon: Home }} active={isActive('/')} />
+            <span className="w-px h-5 bg-steel mx-1" />
+            {WORKFLOW_ITEMS.map((item) => (
+              <NavLink key={item.path} item={item} active={isActive(item.path)} />
+            ))}
+            <span className="w-px h-5 bg-steel mx-1" />
+            {REFERENCE_ITEMS.map((item) => (
+              <NavLink key={item.path} item={item} active={isActive(item.path)} />
+            ))}
+          </nav>
+
+          {/* Mobile toggle */}
+          <button
+            onClick={() => setMobileOpen((o) => !o)}
+            className="lg:hidden p-2 text-text-muted hover:text-text cursor-pointer"
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </div>
-    </nav>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="lg:hidden overflow-hidden border-t border-steel bg-ink"
+          >
+            <div className="px-4 py-3 max-h-[70vh] overflow-y-auto">
+              <NavLink item={{ path: '/', label: 'Home', icon: Home }} active={isActive('/')} onClick={() => setMobileOpen(false)} />
+              <div className="text-[0.65rem] uppercase tracking-wide text-text-dim px-3 pt-3 pb-1">Design Workflow</div>
+              <div className="flex flex-col gap-0.5">
+                {WORKFLOW_ITEMS.map((item) => (
+                  <NavLink key={item.path} item={item} active={isActive(item.path)} onClick={() => setMobileOpen(false)} />
+                ))}
+              </div>
+              <div className="text-[0.65rem] uppercase tracking-wide text-text-dim px-3 pt-3 pb-1">Reference Tools</div>
+              <div className="flex flex-col gap-0.5 pb-2">
+                {REFERENCE_ITEMS.map((item) => (
+                  <NavLink key={item.path} item={item} active={isActive(item.path)} onClick={() => setMobileOpen(false)} />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
   )
 }

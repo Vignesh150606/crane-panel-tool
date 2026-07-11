@@ -1,179 +1,153 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Factory, Grid3x3, Columns3, Check, X, Factory as FactoryIcon, Settings2, BarChart3, Lightbulb, ArrowRight } from 'lucide-react'
+
 import { CRANE_TYPES, DUTY_CLASSES } from '../data/craneData'
 import CraneDiagram from '../components/CraneDiagram'
+import PageHeader from '../components/ui/PageHeader'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Badge from '../components/ui/Badge'
+import { useProjectStore } from '../store/projectStore'
 
-const categories = ['All', 'EOT', 'Gantry', 'Jib', 'Special']
+const CATEGORIES = ['All', 'EOT', 'Gantry', 'Jib', 'Special']
 
 export default function CraneSelector() {
-  const [selected, setSelected] = useState(null)
+  const navigate = useNavigate()
+  const storedCraneType = useProjectStore((s) => s.craneType)
+  const setCraneTypeStore = useProjectStore((s) => s.setCraneType)
+
+  const [selected, setSelected] = useState(storedCraneType || null)
   const [filter, setFilter] = useState('All')
-  const [view, setView] = useState('grid') // grid or compare
+  const [view, setView] = useState('grid')
 
   const cranes = Object.values(CRANE_TYPES)
-  const filtered = filter === 'All' ? cranes : cranes.filter(c => c.category === filter)
+  const filtered = filter === 'All' ? cranes : cranes.filter((c) => c.category === filter)
   const selectedCrane = selected ? CRANE_TYPES[selected] : null
 
+  const selectCrane = (id) => {
+    const next = id === selected ? null : id
+    setSelected(next)
+    if (next) setCraneTypeStore(next)
+  }
+
   return (
-    <div style={{ width: '100%' }}>
+    <div>
+      <PageHeader
+        icon={Factory}
+        title="Crane Type Selector"
+        description="Select a crane type to view specifications, applications, an SVG diagram, and typical component requirements."
+      />
 
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-          🏗️ Crane Type Selector
-        </h1>
-        <p style={{ color: '#64748b' }}>
-          Select a crane type to view specifications, applications, SVG diagram, and component requirements.
-        </p>
-      </div>
-
-      {/* Filter + View Toggle */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {categories.map(cat => (
+      <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+        <div className="flex gap-1.5 flex-wrap">
+          {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              style={{
-                padding: '0.4rem 1rem',
-                borderRadius: '2rem',
-                border: '1px solid',
-                borderColor: filter === cat ? '#f59e0b' : '#2d3f50',
-                backgroundColor: filter === cat ? '#f59e0b' : 'transparent',
-                color: filter === cat ? 'black' : '#94a3b8',
-                cursor: 'pointer',
-                fontWeight: filter === cat ? '600' : '400',
-                fontSize: '0.875rem'
-              }}
+              className={`px-3.5 py-1.5 rounded-full text-sm border transition-colors cursor-pointer
+                ${filter === cat ? 'bg-amber text-ink border-amber font-semibold' : 'border-steel text-text-muted hover:border-steel-light'}`}
             >
               {cat}
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {['grid', 'compare'].map(v => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              style={{
-                padding: '0.4rem 0.8rem',
-                borderRadius: '0.375rem',
-                border: '1px solid',
-                borderColor: view === v ? '#f59e0b' : '#2d3f50',
-                backgroundColor: view === v ? '#1a2632' : 'transparent',
-                color: view === v ? '#f59e0b' : '#64748b',
-                cursor: 'pointer',
-                fontSize: '0.875rem'
-              }}
-            >
-              {v === 'grid' ? '⊞ Grid' : '⇌ Compare'}
-            </button>
-          ))}
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setView('grid')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border transition-colors cursor-pointer
+              ${view === 'grid' ? 'border-amber text-amber bg-surface' : 'border-steel text-text-dim hover:text-text-muted'}`}
+          >
+            <Grid3x3 size={14} /> Grid
+          </button>
+          <button
+            onClick={() => setView('compare')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border transition-colors cursor-pointer
+              ${view === 'compare' ? 'border-amber text-amber bg-surface' : 'border-steel text-text-dim hover:text-text-muted'}`}
+          >
+            <Columns3 size={14} /> Compare
+          </button>
         </div>
       </div>
 
       {view === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-          {filtered.map(crane => (
-            <div
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((crane) => (
+            <motion.div
               key={crane.id}
-              onClick={() => setSelected(crane.id === selected ? null : crane.id)}
-              style={{
-                backgroundColor: '#1a2632',
-                border: `2px solid ${selected === crane.id ? '#f59e0b' : '#2d3f50'}`,
-                borderRadius: '0.75rem',
-                padding: '1rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => { if (selected !== crane.id) e.currentTarget.style.borderColor = '#64748b' }}
-              onMouseLeave={e => { if (selected !== crane.id) e.currentTarget.style.borderColor = '#2d3f50' }}
+              layout
+              whileHover={{ y: -3 }}
+              onClick={() => selectCrane(crane.id)}
+              className={`bg-surface border-2 rounded-xl p-4 cursor-pointer transition-colors
+                ${selected === crane.id ? 'border-amber' : 'border-steel hover:border-steel-light'}`}
             >
-              {/* SVG Diagram */}
-              <div style={{ backgroundColor: '#0f1923', borderRadius: '0.5rem', padding: '0.5rem', marginBottom: '0.75rem' }}>
+              <div className="bg-inset rounded-lg p-2 mb-3">
                 <CraneDiagram craneId={crane.id} width={260} height={140} />
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                <h3 style={{ color: 'white', fontWeight: '600', fontSize: '1rem' }}>{crane.name}</h3>
-                <span style={{
-                  backgroundColor: '#0f1923',
-                  color: '#f59e0b',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '1rem',
-                  fontSize: '0.75rem'
-                }}>
-                  {crane.category}
-                </span>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-display text-text font-semibold">{crane.name}</h3>
+                <span className="bg-inset text-amber text-xs px-2 py-0.5 rounded-full shrink-0 ml-2">{crane.category}</span>
               </div>
-
-              <p style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
-                {crane.description}
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
-                <div style={{ backgroundColor: '#0f1923', padding: '0.4rem', borderRadius: '0.375rem' }}>
-                  <div style={{ color: '#64748b' }}>Capacity</div>
-                  <div style={{ color: '#f59e0b', fontWeight: '600' }}>{crane.capacityRange}</div>
+              <p className="text-text-dim text-sm mb-3 leading-relaxed">{crane.description}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-inset rounded-md px-2.5 py-1.5">
+                  <div className="text-text-dim">Capacity</div>
+                  <div className="text-amber font-semibold font-mono">{crane.capacityRange}</div>
                 </div>
-                <div style={{ backgroundColor: '#0f1923', padding: '0.4rem', borderRadius: '0.375rem' }}>
-                  <div style={{ color: '#64748b' }}>Span</div>
-                  <div style={{ color: '#f59e0b', fontWeight: '600' }}>{crane.spanRange}</div>
+                <div className="bg-inset rounded-md px-2.5 py-1.5">
+                  <div className="text-text-dim">Span</div>
+                  <div className="text-amber font-semibold font-mono">{crane.spanRange}</div>
                 </div>
               </div>
-
               {selected === crane.id && (
-                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #2d3f50' }}>
-                  <div style={{ color: '#22c55e', fontSize: '0.75rem', fontWeight: '600', marginBottom: '0.4rem' }}>
-                    ✓ Selected — Full specs below
-                  </div>
+                <div className="mt-3 pt-3 border-t border-steel flex items-center gap-1.5 text-safe text-xs font-semibold">
+                  <Check size={13} /> Selected — full specs below
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       ) : (
         <CompareTable cranes={filtered} />
       )}
 
-      {/* Detail Panel */}
-      {selectedCrane && (
-        <DetailPanel crane={selectedCrane} onClose={() => setSelected(null)} />
-      )}
+      <AnimatePresence>
+        {selectedCrane && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <DetailPanel crane={selectedCrane} onClose={() => setSelected(null)} onContinue={() => navigate('/calculator')} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-function DetailPanel({ crane, onClose }) {
+function DetailPanel({ crane, onClose, onContinue }) {
   return (
-    <div style={{
-      marginTop: '2rem',
-      backgroundColor: '#1a2632',
-      border: '2px solid #f59e0b',
-      borderRadius: '1rem',
-      padding: '2rem'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+    <Card variant="highlight" padding="lg" className="mt-6">
+      <div className="flex justify-between items-start mb-6 gap-4">
         <div>
-          <h2 style={{ color: '#f59e0b', fontSize: '1.5rem', fontWeight: 'bold' }}>{crane.fullName}</h2>
-          <p style={{ color: '#64748b', marginTop: '0.25rem' }}>{crane.description}</p>
+          <h2 className="font-display text-amber text-xl font-bold">{crane.fullName}</h2>
+          <p className="text-text-dim mt-1 text-sm">{crane.description}</p>
         </div>
-        <button
-          onClick={onClose}
-          style={{ color: '#64748b', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
-        >
-          ✕
+        <button onClick={onClose} className="text-text-dim hover:text-text cursor-pointer">
+          <X size={20} />
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-
-        {/* Left: Diagram + specs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <div style={{ backgroundColor: '#0f1923', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+          <div className="bg-inset rounded-xl p-4 mb-5 text-center">
             <CraneDiagram craneId={crane.id} width={280} height={180} />
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="grid grid-cols-2 gap-2.5">
             {[
               { label: 'Capacity Range', value: crane.capacityRange },
               { label: 'Span Range', value: crane.spanRange },
@@ -181,136 +155,104 @@ function DetailPanel({ crane, onClose }) {
               { label: 'Duty Class', value: crane.specs.typicalDutyClass },
               { label: 'Girders', value: crane.specs.girders },
               { label: 'Hoist Position', value: crane.specs.hoistPosition },
-            ].map(item => (
-              <div key={item.label} style={{ backgroundColor: '#0f1923', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                <div style={{ color: '#64748b', fontSize: '0.75rem', marginBottom: '0.25rem' }}>{item.label}</div>
-                <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.875rem' }}>{item.value}</div>
+            ].map((item) => (
+              <div key={item.label} className="bg-inset rounded-lg px-3 py-2">
+                <div className="text-text-dim text-xs mb-0.5">{item.label}</div>
+                <div className="text-amber font-semibold text-sm font-mono">{item.value}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Right: Applications, Motions, Duty classes */}
         <div>
-          <Section title="🏭 Applications">
-            {crane.applications.map(app => (
-              <div key={app} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                <span style={{ color: '#22c55e' }}>✓</span>
-                <span style={{ color: '#e2e8f0', fontSize: '0.875rem' }}>{app}</span>
+          <Section title="Applications" icon={FactoryIcon}>
+            {crane.applications.map((app) => (
+              <div key={app} className="flex items-center gap-2 mb-1.5 text-sm text-text">
+                <Check size={14} className="text-safe shrink-0" /> {app}
               </div>
             ))}
           </Section>
 
-          <Section title="⚙️ Operating Motions">
-            {crane.motions.map(motion => (
-              <div key={motion} style={{
-                backgroundColor: '#0f1923',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                marginBottom: '0.4rem',
-                color: '#f59e0b',
-                fontSize: '0.875rem',
-                fontWeight: '600'
-              }}>
-                {motion}
-              </div>
-            ))}
-          </Section>
-
-          <Section title="📊 Duty Class Guide">
-            {['M3', 'M4', 'M5'].map(dc => (
-              <div key={dc} style={{ marginBottom: '0.4rem' }}>
-                <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '0.8rem' }}>{dc}: </span>
-                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{DUTY_CLASSES[dc]}</span>
-              </div>
-            ))}
-          </Section>
-
-          <div style={{
-            backgroundColor: '#0f1923',
-            border: '1px solid #22c55e',
-            borderRadius: '0.5rem',
-            padding: '0.75rem',
-            marginTop: '1rem'
-          }}>
-            <div style={{ color: '#22c55e', fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-              💡 Engineering Note
+          <Section title="Operating Motions" icon={Settings2}>
+            <div className="flex flex-wrap gap-1.5">
+              {crane.motions.map((m) => (
+                <Badge key={m} tone="caution" dot={false}>{m}</Badge>
+              ))}
             </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>
+          </Section>
+
+          <Section title="Duty Class Guide" icon={BarChart3}>
+            {['M3', 'M4', 'M5'].map((dc) => (
+              <div key={dc} className="mb-1.5 text-xs">
+                <span className="text-amber font-semibold font-mono">{dc}: </span>
+                <span className="text-text-muted">{DUTY_CLASSES[dc]}</span>
+              </div>
+            ))}
+          </Section>
+
+          <div className="flex items-start gap-2 bg-safe-dim/50 border border-safe/30 rounded-lg px-3.5 py-3 mt-4">
+            <Lightbulb size={15} className="text-safe shrink-0 mt-0.5" />
+            <p className="text-xs text-text-muted leading-relaxed">
               Each motion (LT, CT, Hoist) requires a dedicated pair of contactors with interlock logic
-              to prevent simultaneous energisation of opposing directions.
-              Contactor rating = 3× motor full load current (IS standard).
+              to prevent simultaneous energisation of opposing directions. Contactor rating = 3x motor
+              full load current (IS/IEC 60947-4-1).
             </p>
           </div>
+
+          <Button className="w-full mt-4" icon={ArrowRight} iconPosition="right" onClick={onContinue}>
+            Continue to Load Calculator
+          </Button>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
 
-function Section({ title, children }) {
+function Section({ title, icon: Icon, children }) {
   return (
-    <div style={{ marginBottom: '1.25rem' }}>
-      <h4 style={{ color: 'white', fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.6rem' }}>{title}</h4>
+    <div className="mb-5">
+      <h4 className="text-text font-semibold text-sm mb-2.5 flex items-center gap-1.5">
+        <Icon size={14} className="text-text-dim" /> {title}
+      </h4>
       {children}
     </div>
   )
 }
 
 function CompareTable({ cranes }) {
+  const rows = [
+    { label: 'Category', key: 'category' },
+    { label: 'Capacity Range', key: 'capacityRange' },
+    { label: 'Span Range', key: 'spanRange' },
+    { label: 'Max Capacity', fn: (c) => `${c.specs.maxCapacity}T` },
+    { label: 'Girders', fn: (c) => c.specs.girders },
+    { label: 'Duty Class', fn: (c) => c.specs.typicalDutyClass },
+    { label: 'Motions', fn: (c) => c.motions.join(', ') },
+  ]
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+    <div className="overflow-x-auto rounded-xl border border-steel">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr style={{ backgroundColor: '#1a2632' }}>
-            <th style={th}>Specification</th>
-            {cranes.map(c => (
-              <th key={c.id} style={{ ...th, color: '#f59e0b' }}>{c.name}</th>
+          <tr className="bg-surface">
+            <th className="text-left px-4 py-3 text-text-muted border-b border-steel whitespace-nowrap">Specification</th>
+            {cranes.map((c) => (
+              <th key={c.id} className="text-left px-4 py-3 text-amber border-b border-steel whitespace-nowrap">{c.name}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {[
-            { label: 'Category', key: 'category' },
-            { label: 'Capacity Range', key: 'capacityRange' },
-            { label: 'Span Range', key: 'spanRange' },
-            { label: 'Max Capacity', fn: c => `${c.specs.maxCapacity}T` },
-            { label: 'Girders', fn: c => c.specs.girders },
-            { label: 'Duty Class', fn: c => c.specs.typicalDutyClass },
-          ].map((row, i) => (
-            <tr key={row.label} style={{ backgroundColor: i % 2 === 0 ? '#0f1923' : '#1a2632' }}>
-              <td style={{ ...td, color: '#94a3b8', fontWeight: '600' }}>{row.label}</td>
-              {cranes.map(c => (
-                <td key={c.id} style={{ ...td, color: '#e2e8f0' }}>
+          {rows.map((row, i) => (
+            <tr key={row.label} className={i % 2 === 0 ? 'bg-inset' : 'bg-surface'}>
+              <td className="px-4 py-2.5 border-b border-steel text-text-muted font-medium align-top whitespace-nowrap">{row.label}</td>
+              {cranes.map((c) => (
+                <td key={c.id} className="px-4 py-2.5 border-b border-steel text-text align-top">
                   {row.fn ? row.fn(c) : c[row.key]}
                 </td>
               ))}
             </tr>
           ))}
-          <tr style={{ backgroundColor: '#1a2632' }}>
-            <td style={{ ...td, color: '#94a3b8', fontWeight: '600' }}>Motions</td>
-            {cranes.map(c => (
-              <td key={c.id} style={{ ...td, color: '#e2e8f0' }}>
-                {c.motions.join(', ')}
-              </td>
-            ))}
-          </tr>
         </tbody>
       </table>
     </div>
   )
-}
-
-const th = {
-  padding: '0.75rem 1rem',
-  textAlign: 'left',
-  color: '#e2e8f0',
-  borderBottom: '1px solid #2d3f50',
-  whiteSpace: 'nowrap'
-}
-
-const td = {
-  padding: '0.6rem 1rem',
-  borderBottom: '1px solid #2d3f50',
-  verticalAlign: 'top'
 }
