@@ -5,10 +5,12 @@ Every numeric field has an engineering-plausible bound (see app/data/standards.p
 so the API rejects negative loads, impossible voltages, out-of-range PF/efficiency,
 etc. with a clear message instead of silently producing nonsense output.
 """
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, Field, field_validator
 
 from app.data import standards as S
+
+IEClass = Literal["IE2", "IE3"]
 
 
 class MotorCalcRequest(BaseModel):
@@ -20,7 +22,8 @@ class MotorCalcRequest(BaseModel):
     ct_load_factor: float = Field(default=0.05, gt=0, le=1, description="Fraction of hook load CT motor must move (crab self-weight share)")
     voltage: Optional[float] = Field(default=None, ge=S.VOLTAGE_MIN, le=S.VOLTAGE_MAX)
     power_factor: Optional[float] = Field(default=None, ge=S.PF_MIN, le=S.PF_MAX)
-    efficiency: Optional[float] = Field(default=None, ge=S.EFFICIENCY_MIN, le=S.EFFICIENCY_MAX)
+    ie_class: Optional[IEClass] = Field(default=None, description="IEC 60034-30-1 efficiency class (IE2 or IE3). Efficiency is looked up per-motor from its rated kW — not a flat number. Omit to use the India-mandated default (IE3).")
+    efficiency: Optional[float] = Field(default=None, ge=S.EFFICIENCY_MIN, le=S.EFFICIENCY_MAX, description="Manual efficiency override (0-1). Takes priority over ie_class if both are supplied.")
     hoist_hp_override: Optional[float] = Field(default=None, gt=0, le=S.HP_MAX, description="Skip the mechanical HP calc and use this HP directly")
     lt_hp_override: Optional[float] = Field(default=None, gt=0, le=S.HP_MAX)
     ct_hp_override: Optional[float] = Field(default=None, gt=0, le=S.HP_MAX)
@@ -59,6 +62,7 @@ class StarDeltaRequest(BaseModel):
     timer_seconds: float = Field(default=5, ge=1, le=60)
     voltage: Optional[float] = Field(default=None, ge=S.VOLTAGE_MIN, le=S.VOLTAGE_MAX)
     power_factor: Optional[float] = Field(default=None, ge=S.PF_MIN, le=S.PF_MAX)
+    ie_class: Optional[IEClass] = Field(default=None)
     efficiency: Optional[float] = Field(default=None, ge=S.EFFICIENCY_MIN, le=S.EFFICIENCY_MAX)
 
 
@@ -69,4 +73,5 @@ class BOMMotorSet(BaseModel):
     travel_length: float = Field(..., gt=0, le=S.LENGTH_MAX)
     voltage: Optional[float] = Field(default=None, ge=S.VOLTAGE_MIN, le=S.VOLTAGE_MAX)
     power_factor: Optional[float] = Field(default=None, ge=S.PF_MIN, le=S.PF_MAX)
+    ie_class: Optional[IEClass] = Field(default=None)
     efficiency: Optional[float] = Field(default=None, ge=S.EFFICIENCY_MIN, le=S.EFFICIENCY_MAX)

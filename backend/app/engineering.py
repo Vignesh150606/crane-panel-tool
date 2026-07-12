@@ -11,17 +11,55 @@ import math
 from app.data import standards as S
 
 
-def motor_hp(load_tons: float, speed_mpm: float, efficiency: float = S.DEFAULT_EFFICIENCY, factor: float = 1.0) -> float:
-    """Mechanical power required to move `load_tons * factor` at `speed_mpm`."""
+def motor_hp(load_tons: float, speed_mpm: float, factor: float = 1.0) -> float:
+    """Required motor RATED OUTPUT (mechanical) power to move `load_tons * factor` at `speed_mpm`.
+
+    This is pure physics — force x velocity, converted to HP — and does NOT
+    involve motor efficiency. Efficiency describes how much ELECTRICAL input
+    a motor needs to produce a given MECHANICAL output; it plays no part in
+    how much mechanical output the job itself requires. (Bug fixed: an
+    earlier version divided by efficiency here AND again in
+    full_load_current(), which silently inflated every downstream FLC by an
+    extra 1/efficiency and oversized every contactor/cable/MPCB in the
+    design. Efficiency must be applied exactly once, in full_load_current.)
+    """
     load_kg = load_tons * 1000 * factor
     speed_ms = speed_mpm / 60
-    power_w = (load_kg * S.GRAVITY * speed_ms) / efficiency
+    power_w = load_kg * S.GRAVITY * speed_ms
     return power_w / 746.0
+
+
+def motor_efficiency_for_rating(hp: float, ie_class: str = S.DEFAULT_IE_CLASS) -> float:
+    """Look up minimum nameplate efficiency (0-1) for a motor of this HP rating
+    and IE class, per IEC 60034-30-1 (4-pole, 50Hz). Linearly interpolates
+    between table points; clamps to the table's own end values outside its
+    range rather than extrapolating."""
+    kw = hp * S.HP_TO_KW
+    points = S.IE_TABLE_KW_POINTS
+    if kw <= points[0]:
+        pct = S.IE_EFFICIENCY_TABLE[points[0]][ie_class]
+    elif kw >= points[-1]:
+        pct = S.IE_EFFICIENCY_TABLE[points[-1]][ie_class]
+    else:
+        lo = max(p for p in points if p <= kw)
+        hi = min(p for p in points if p >= kw)
+        if lo == hi:
+            pct = S.IE_EFFICIENCY_TABLE[lo][ie_class]
+        else:
+            lo_val = S.IE_EFFICIENCY_TABLE[lo][ie_class]
+            hi_val = S.IE_EFFICIENCY_TABLE[hi][ie_class]
+            frac = (kw - lo) / (hi - lo)
+            pct = lo_val + frac * (hi_val - lo_val)
+    return pct / 100.0
 
 
 def full_load_current(hp: float, voltage: float = S.DEFAULT_VOLTAGE,
                        power_factor: float = S.DEFAULT_POWER_FACTOR,
                        efficiency: float = S.DEFAULT_EFFICIENCY) -> float:
+    """FLC from a motor's RATED OUTPUT hp. `efficiency` here is the motor's
+    OWN electrical-to-mechanical conversion efficiency (from IEC 60034-30-1
+    IE class, or a manual override) — this is the single place efficiency
+    enters the current calculation."""
     kw = hp * S.HP_TO_KW
     return (kw * 1000) / (math.sqrt(3) * voltage * power_factor * efficiency)
 

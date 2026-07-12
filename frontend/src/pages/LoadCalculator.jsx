@@ -6,6 +6,7 @@ import { Calculator, ArrowUpDown, MoveHorizontal, MoveVertical, ArrowRight, Zap 
 import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import NumberField from '../components/ui/NumberField'
+import SelectField from '../components/ui/SelectField'
 import Toggle from '../components/ui/Toggle'
 import Button from '../components/ui/Button'
 import StatPlate from '../components/ui/StatPlate'
@@ -25,7 +26,13 @@ import { useProjectStore } from '../store/projectStore'
 const DEFAULTS = {
   load: 5, hoistSpeed: 4, ltSpeed: 20, ctSpeed: 10,
   hoistHP: '', ltHP: '', ctHP: '', useCustomHP: false,
+  ieClass: 'IE3',
 }
+
+const IE_CLASS_OPTIONS = [
+  { value: 'IE3', label: 'IE3 — Premium efficiency (India-mandated minimum since 2023)' },
+  { value: 'IE2', label: 'IE2 — High efficiency (legacy / already-installed motors)' },
+]
 
 const MOTOR_META = {
   hoist: { label: 'Hoist Motor', icon: ArrowUpDown },
@@ -78,6 +85,7 @@ export default function LoadCalculator() {
         hoist_speed: inputs.hoistSpeed,
         lt_speed: inputs.ltSpeed,
         ct_speed: inputs.ctSpeed,
+        ie_class: inputs.ieClass,
         ...(inputs.useCustomHP
           ? {
               hoist_hp_override: inputs.hoistHP,
@@ -143,6 +151,14 @@ export default function LoadCalculator() {
             </>
           )}
 
+          <SelectField
+            label="Motor Efficiency Class"
+            value={inputs.ieClass}
+            onChange={(v) => update('ieClass', v)}
+            options={IE_CLASS_OPTIONS}
+            helper="Efficiency is looked up per motor from IEC 60034-30-1, not one flat number — smaller motors are genuinely less efficient than larger ones at the same class."
+          />
+
           <Button className="w-full mt-2" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
             {loading ? 'Calculating…' : 'Calculate Ratings'}
           </Button>
@@ -198,9 +214,10 @@ function MotorResultCard({ motorKey, data }) {
           {data.hp_was_override && <Badge tone="info" dot={false}>Custom HP</Badge>}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="grid grid-cols-4 gap-2 mb-3">
           <StatPlate label="Motor HP" value={hp.toFixed(2)} unit="HP" />
           <StatPlate label="Motor kW" value={data.kw} unit="kW" />
+          <StatPlate label="Efficiency" value={data.efficiency_pct} unit="%" />
           <StatPlate label="Full Load Current" value={flc.toFixed(2)} unit="A" tone="amber" />
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4">

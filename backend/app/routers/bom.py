@@ -13,7 +13,6 @@ router = APIRouter(prefix="/api", tags=["bom"])
 def generate_bom(req: BOMMotorSet):
     voltage = req.voltage or S.DEFAULT_VOLTAGE
     pf = req.power_factor or S.DEFAULT_POWER_FACTOR
-    eff = req.efficiency or S.DEFAULT_EFFICIENCY
 
     motors = {"Hoist": req.hoist_hp, "Long Travel": req.lt_hp, "Cross Travel": req.ct_hp}
     items = []
@@ -24,7 +23,14 @@ def generate_bom(req: BOMMotorSet):
         items.append({"slNo": sl, "component": component, "spec": spec, "qty": qty, "unit": unit, "purpose": purpose})
         sl += 1
 
-    flcs = {name: E.full_load_current(hp, voltage, pf, eff) for name, hp in motors.items()}
+    # Efficiency is looked up per-motor from its OWN rated HP and the chosen
+    # IE class (manual override wins if supplied) — not one flat number.
+    def _eff_for(hp):
+        if req.efficiency is not None:
+            return req.efficiency
+        return E.motor_efficiency_for_rating(hp, req.ie_class or S.DEFAULT_IE_CLASS)
+
+    flcs = {name: E.full_load_current(hp, voltage, pf, _eff_for(hp)) for name, hp in motors.items()}
     total_flc = sum(flcs.values())
     main_required = total_flc * S.CABLE_DERATE_FACTOR
     main_mcb = E.select_from_series(main_required, S.CONTACTOR_RATINGS)

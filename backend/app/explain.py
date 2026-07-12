@@ -29,46 +29,54 @@ def _block(formula, variables, substitution, result, reasoning, standard_key, mi
     }
 
 
-def explain_motor_hp(load_tons, speed_mpm, efficiency, factor, hp, motion_label):
+def explain_motor_hp(load_tons, speed_mpm, factor, hp, motion_label):
     load_kg = load_tons * 1000 * factor
     speed_ms = speed_mpm / 60
     return _block(
-        formula="HP = (m x g x v) / (746 x eta)",
+        formula="HP = (m x g x v) / 746",
         variables=[
             {"symbol": "m", "name": "Load mass", "value": round(load_kg, 1), "unit": "kg"},
             {"symbol": "g", "name": "Gravity", "value": S.GRAVITY, "unit": "m/s^2"},
             {"symbol": "v", "name": "Speed", "value": round(speed_ms, 4), "unit": "m/s"},
-            {"symbol": "eta", "name": "Drive efficiency", "value": efficiency, "unit": ""},
         ],
-        substitution=f"HP = ({load_kg:.0f} x 9.81 x {speed_ms:.4f}) / (746 x {efficiency}) = {hp:.2f} HP",
+        substitution=f"HP = ({load_kg:.0f} x 9.81 x {speed_ms:.4f}) / 746 = {hp:.2f} HP",
         result=f"{hp:.2f} HP",
         reasoning=(
             f"The {motion_label} motor has to lift/move {load_kg:.0f} kg against gravity at {speed_ms*60:.1f} m/min. "
-            "Mechanical power is force x velocity; dividing by 746 converts watts to HP, and dividing by "
-            "efficiency accounts for losses in the motor and gearbox so the motor is rated for the electrical "
-            "input power it actually draws, not just the useful mechanical output."
+            "Mechanical power is force x velocity; dividing by 746 converts watts to HP. This is the motor's "
+            "required RATED OUTPUT — pure physics, independent of the motor's own electrical efficiency. "
+            "Efficiency only enters the picture next, when converting this output rating into the electrical "
+            "current the motor draws (see Full Load Current below) — applying it here as well would double-count "
+            "it and oversize every downstream component."
         ),
         standard_key="motor_power",
     )
 
 
-def explain_flc(hp, voltage, power_factor, efficiency, flc):
+def explain_flc(hp, voltage, power_factor, efficiency, flc, efficiency_source="IE3"):
     kw = hp * S.HP_TO_KW
+    eff_note = (
+        "manually entered by you"
+        if efficiency_source == "manual"
+        else f"looked up for a {kw:.2f} kW motor from the IEC 60034-30-1 {efficiency_source} efficiency table"
+    )
     return _block(
         formula="FLC = (kW x 1000) / (sqrt3 x V x PF x eta)",
         variables=[
-            {"symbol": "kW", "name": "Motor power", "value": round(kw, 2), "unit": "kW"},
+            {"symbol": "kW", "name": "Motor rated output", "value": round(kw, 2), "unit": "kW"},
             {"symbol": "V", "name": "Line voltage", "value": voltage, "unit": "V"},
             {"symbol": "PF", "name": "Power factor", "value": power_factor, "unit": ""},
-            {"symbol": "eta", "name": "Efficiency", "value": efficiency, "unit": ""},
+            {"symbol": "eta", "name": "Motor efficiency", "value": round(efficiency, 3), "unit": ""},
         ],
-        substitution=f"FLC = ({kw:.2f} x 1000) / (1.732 x {voltage} x {power_factor} x {efficiency}) = {flc:.2f} A",
+        substitution=f"FLC = ({kw:.2f} x 1000) / (1.732 x {voltage} x {power_factor} x {efficiency:.3f}) = {flc:.2f} A",
         result=f"{flc:.2f} A",
         reasoning=(
             "Every downstream component (contactor, MPCB, cable) is sized off this one number, so it's the most "
             "important intermediate result in the whole design. The sqrt(3) term appears because this is a "
             "3-phase circuit — line current relates to power through the phase voltage AND the 120 degree phase "
-            "offset between the three lines, not a simple single-phase P=VI."
+            f"offset between the three lines, not a simple single-phase P=VI. Efficiency here was {eff_note}: "
+            "smaller motors are genuinely less efficient than larger ones, so this tool looks up the real "
+            "IEC value for THIS motor's size rather than assuming one flat number for every rating."
         ),
         standard_key="flc",
     )
@@ -76,17 +84,20 @@ def explain_flc(hp, voltage, power_factor, efficiency, flc):
 
 def explain_contactor(flc, required, rating):
     return _block(
-        formula="Ie(contactor) >= 3 x FLC",
+        formula="Ie(contactor) >= 2.0 x FLC",
         variables=[
             {"symbol": "FLC", "name": "Full load current", "value": round(flc, 2), "unit": "A"},
         ],
-        substitution=f"3 x {flc:.2f} = {required:.2f} A -> next standard size = {rating} A",
+        substitution=f"2.0 x {flc:.2f} = {required:.2f} A -> next standard size = {rating} A",
         result=f"{rating} A",
         reasoning=(
-            "A crane motor is switched on and off constantly (jogging hoist/travel), and briefly sees 6-8x FLC "
-            "every time it starts. A contactor sized at exactly 1x FLC would weld or burn its contacts under "
-            "that duty. The 3x FLC rule of thumb keeps the contactor inside its AC-3 utilisation category for "
-            "this kind of repeated-start, inductive-load switching."
+            "A crane hoist/travel motor is reversed and jogged constantly, and briefly sees 6-8x FLC every time "
+            "it starts. A contactor sized at exactly 1x FLC (a light general-duty margin) would weld or wear out "
+            "its contacts under that duty. Industry sizing guides define a graduated safety margin by duty "
+            "severity: about 1.25x FLC for light-duty continuous loads, 1.5x for heavy-duty frequent starting, "
+            "and up to 2.0x for the most severe category — rapid reversing, jogging or plugging — which is "
+            "exactly what a crane hoist/travel contactor does. 2.0x is the documented ceiling for that category, "
+            "not an arbitrary round number."
         ),
         standard_key="contactor",
     )
