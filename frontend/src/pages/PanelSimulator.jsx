@@ -4,11 +4,29 @@ import { Gamepad2, Octagon, BookOpen } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import FormulaExplainer from '../components/ui/FormulaExplainer'
 
 const MOTIONS = {
   LT: { label: 'Long Travel', fwd: 'FORWARD', rev: 'REVERSE', color: '#3b82f6' },
   CT: { label: 'Cross Travel', fwd: 'LEFT', rev: 'RIGHT', color: '#a78bfa' },
   HOIST: { label: 'Hoist', fwd: 'UP', rev: 'DOWN', color: '#f5a623' },
+}
+
+const CROSS_MOTION_EXPLANATION = {
+  formula: 'Interlock only applies WITHIN a motion, never ACROSS motions: Hoist UP + Long Travel FORWARD together is normal crane operation; Hoist UP + Hoist DOWN together is a short circuit.',
+  variables: [
+    { symbol: 'Same motion', name: 'FWD and REV contactors for one motor — share the same motor terminals', value: 'must interlock', unit: '' },
+    { symbol: 'Different motions', name: 'Hoist, LT, CT — each has its own motor, own contactors, own power branch', value: 'independent', unit: '' },
+  ],
+  substitution: 'Try it above: activate Hoist UP, then Long Travel FORWARD, then Cross Travel LEFT — all three run together with no block. Now try Hoist UP then Hoist DOWN — the second one is blocked.',
+  result: 'Three independent motions running together isn\'t a bug being allowed through — it\'s the whole point. Only same-motor opposing directions are dangerous.',
+  reasoning:
+    'It\'s easy to assume "interlocking" means the panel should stop you from running more than one thing at once — but that\'s not what an EOT crane does, and it isn\'t what this panel models. A crane routinely travels the bridge, traverses the trolley, and hoists or lowers the load all at the same time; that\'s normal operation, not a fault condition. Go back to the Power Circuit page: Hoist, Long Travel, and Cross Travel each have their own motor, own MPCB, own contactor pair, and their own branch off the shared supply. Nothing about running one motion has any electrical relationship to another motion — they don\'t share terminals, so there\'s no way for them to short against each other. The ONLY dangerous combination is two contactors that share the same motor terminals trying to feed it opposite phase sequences simultaneously — and that only happens between the Forward and Reverse contactor of the same motion. That\'s why the interlock wiring shown below is per-motion, not a single global "only one thing at a time" lockout.',
+  standard: 'General crane control architecture — each motion is an independently protected branch circuit (see Power Circuit page); not a specific IEC clause.',
+  common_mistakes: [
+    'Assuming a panel that lets you run Hoist and Travel together is missing an interlock — it isn\'t; that\'s intentional and normal.',
+    'Confusing an operational restriction (some crane duty cycles/PLCs deliberately limit simultaneous hoist+travel for load-swing safety) with an electrical necessity — the panel doesn\'t need to stop this for wiring-safety reasons, though a site may choose to for handling-safety reasons.',
+  ],
 }
 
 export default function PanelSimulator() {
@@ -147,6 +165,10 @@ export default function PanelSimulator() {
             </div>
           </Card>
         </div>
+      </div>
+
+      <div className="mt-5">
+        <FormulaExplainer title="Why can Hoist, Long Travel and Cross Travel all run together, but FWD/REV can't?" explanation={CROSS_MOTION_EXPLANATION} />
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, BookMarked, AlertTriangle, Lightbulb, GraduationCap, Calculator, Factory, FlaskConical } from 'lucide-react'
+import { useTierStore } from '../../store/tierStore'
 
 /**
  * `explanation` is the exact shape returned by the backend's explain.py:
@@ -19,6 +20,11 @@ import { ChevronDown, BookMarked, AlertTriangle, Lightbulb, GraduationCap, Calcu
  *
  * Each tier is a superset of the one before it, so moving up never hides
  * something you already saw — it only adds.
+ *
+ * The tier selection itself lives in `store/tierStore.js`, shared and
+ * persisted across every FormulaExplainer instance on every page — picking
+ * Expert once means every explainer, on this page and the next, opens at
+ * Expert too. Only the open/closed state of each individual block stays local.
  */
 const TIERS = [
   { key: 'basic', label: 'Basic', icon: GraduationCap, question: 'What is this?' },
@@ -38,7 +44,8 @@ function oneLineTakeaway(explanation) {
 
 export default function FormulaExplainer({ title = 'Why this value?', explanation, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
-  const [tier, setTier] = useState('basic')
+  const tier = useTierStore((s) => s.tier)
+  const setTier = useTierStore((s) => s.setTier)
   if (!explanation) return null
 
   const level = TIER_INDEX[tier]

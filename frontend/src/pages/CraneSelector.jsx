@@ -9,9 +9,27 @@ import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
+import FormulaExplainer from '../components/ui/FormulaExplainer'
 import { useProjectStore } from '../store/projectStore'
 
 const CATEGORIES = ['All', 'EOT', 'Gantry', 'Jib', 'Special']
+
+const DUTY_CLASS_ELECTRICAL_EXPLANATION = {
+  formula: 'Duty class isn\'t only a mechanical rating — it also sets how many start/stop/reversal cycles per hour the electrical components must survive, which drives motor duty type and contactor selection downstream, not just their current rating.',
+  variables: [
+    { symbol: 'M3–M4', name: 'Light/moderate duty — infrequent starts, long rest periods', value: 'standard AC-3 contactors, S4 motor duty typically adequate', unit: '' },
+    { symbol: 'M6–M8', name: 'Heavy to continuous duty — frequent reversing, high cycle rate', value: 'AC-4-rated contactors, higher cyclic-duty motor rating needed', unit: '' },
+  ],
+  substitution: 'The M-class picked on this page feeds forward into every later page: it\'s part of why "just pick a contactor rated for the current" on the Cable & Busbar / Load Calculator pages isn\'t the whole story.',
+  result: 'Two cranes with identical motor HP but different duty classes can legitimately need different-grade contactors, even though the FLC-based current calculation comes out the same.',
+  reasoning:
+    'Crane duty classification (the M3–M8 scale here) exists because a crane\'s components — mechanical AND electrical — see completely different stress depending on how the crane is actually used, not just how strong it needs to be. An M3 crane in a maintenance bay starting a few times an hour has nothing in common electrically with an M7 crane in a steel plant reversing continuously. Two concrete downstream consequences: first, crane motors are rated for intermittent/cyclic duty (duty types like S4/S5 in motor nameplate terms), not continuous S1 duty the way a pump motor would be, and the specific duty class affects how that cyclic rating is chosen. Second, and more directly relevant to the contactor sizing shown elsewhere in this app: contactors have a rated utilization category — AC-3 covers standard motor starting and stopping, AC-4 covers rapid reversing and jogging, which is electrically far more punishing per operation (breaking current while the motor is still near full starting current, repeatedly) — and every contactor has a finite number of rated electrical operations before end-of-life. A current-based (FLC × multiplier) sizing calculation doesn\'t know how many times per hour that contactor will be asked to reverse; the duty class picked on this page is where that information should come from.',
+  standard: 'Crane mechanism/duty classification per ISO 4301-1 / FEM 9.511 (the M1–M8 scale used here); motor duty types per IEC 60034-1 (S1–S10); contactor utilization categories AC-3/AC-4 per IEC 60947-4-1.',
+  common_mistakes: [
+    'Sizing a contactor purely from FLC × multiplier and ignoring duty class — two motors with identical FLC can need different contactor grades if their duty classes differ.',
+    'Assuming "heavier duty class" only means "build the structure stronger" — it has real electrical component consequences too, which is why this page comes before the electrical calculators in the workflow, not after.',
+  ],
+}
 
 export default function CraneSelector() {
   const navigate = useNavigate()
@@ -189,6 +207,8 @@ function DetailPanel({ crane, onClose, onContinue }) {
               </div>
             ))}
           </Section>
+
+          <FormulaExplainer title="Why does duty class matter electrically, not just structurally?" explanation={DUTY_CLASS_ELECTRICAL_EXPLANATION} />
 
           <div className="flex items-start gap-2 bg-safe-dim/50 border border-safe/30 rounded-lg px-3.5 py-3 mt-4">
             <Lightbulb size={15} className="text-safe shrink-0 mt-0.5" />

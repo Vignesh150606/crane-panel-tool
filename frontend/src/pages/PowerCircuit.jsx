@@ -3,12 +3,49 @@ import { Zap, Play, Square, X, Ruler } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import FormulaExplainer from '../components/ui/FormulaExplainer'
+
+const PROTECTION_LAYERS_EXPLANATION = {
+  formula: 'MCB (incomer) → SPP (phase-loss) → MPCB (per-motor) — three devices, three different failure modes, deliberately not combined into one.',
+  variables: [
+    { symbol: 'MCB', name: 'Main Circuit Breaker — whole-panel short-circuit/overcurrent protection', value: 'upstream', unit: '' },
+    { symbol: 'SPP', name: 'Single Phase Preventer — trips on phase loss or reversal, before it reaches any motor', value: 'mid-stream', unit: '' },
+    { symbol: 'MPCB', name: 'Motor Protection Circuit Breaker — one per motion, sized to that motor\'s own FLC', value: 'per-branch', unit: '' },
+  ],
+  substitution: 'A fault on the Hoist motor should trip the Hoist MPCB only — Long Travel and Cross Travel keep running. That selectivity is the entire reason these are three separate devices instead of one big breaker.',
+  result: 'Three failure modes, each caught by the device actually designed for it, without any one motor\'s fault taking down the whole panel.',
+  reasoning:
+    'A single upstream breaker can\'t do all three jobs well. Short-circuit protection (MCB) needs to be fast and needs a high enough rating to carry the sum of every motor starting simultaneously without nuisance-tripping. Single-phasing protection (SPP) is a completely different failure mode: if one incoming phase is lost (a blown fuse upstream, a loose terminal), a running 3-phase motor doesn\'t just get weaker — the remaining two phases have to carry the full load between them, drawing roughly double the normal current in each, and a plain thermal overload relay is often too slow to catch this before winding insulation cooks. An SPP watches phase balance directly and trips fast, before that damage happens — a plain MCB has no way to detect this at all, since total current can look almost normal from outside. And per-motor overload protection (MPCB) has to be sized to that specific motor\'s FLC and startup characteristic (a motor draws 6-8x FLC for a few seconds at start — a device sized for cable protection would trip on every start), which is exactly why crane panels use one MPCB per motion instead of relying on the main MCB\'s thermal curve for everything downstream.',
+  standard: 'General motor circuit protection practice per IEC 60947-2 (circuit breakers) and IEC 60947-4-1 (motor starters/overload relays) — device selection principle, not a specific clause citation.',
+  common_mistakes: [
+    'Assuming the overload relay will catch single-phasing fast enough — often it won\'t, before winding damage, which is exactly why a dedicated SPP exists.',
+    'Sizing the main MCB below what all branch MPCBs could draw simultaneously at motor startup, causing nuisance trips on multi-motion operation.',
+  ],
+}
+
+const PHASE_REVERSAL_EXPLANATION = {
+  formula: 'Swap any two of the three phase connections at the motor terminals → the rotating stator field reverses direction → the rotor (and load) reverses.',
+  variables: [
+    { symbol: 'R, Y, B', name: 'The three incoming phase conductors', value: 'fixed sequence', unit: '' },
+    { symbol: 'Forward', name: 'Contactor wires R→R, Y→Y, B→B to the motor', value: 'R-Y-B', unit: 'sequence' },
+    { symbol: 'Reverse', name: 'Contactor swaps two lines, e.g. R→R, Y→B, B→Y', value: 'R-B-Y', unit: 'sequence' },
+  ],
+  substitution: 'Only 2 of the 3 phase leads are ever physically swapped between the Forward and Reverse contactors — the third runs straight through unchanged.',
+  result: 'That\'s why a reversing contactor pair only needs to cross-wire two of the three motor leads, not rebuild all three.',
+  reasoning:
+    'A 3-phase induction motor\'s rotor follows a rotating magnetic field set up by the stator windings, and the direction that field rotates is set entirely by the order the three phases arrive in — R-Y-B rotates one way, R-B-Y rotates the other. Swapping any two of the three lines flips that sequence and reverses the field (and therefore the rotor) — swapping all three does nothing, since the relative sequence R→Y→B→R is unchanged, just relabeled, which is a genuinely common beginner mistake on first wiring a reversing starter. This is also exactly why the electrical interlock on the Control Circuit page matters so much here: if the Forward and Reverse contactors ever closed at the same instant, those two swapped lines would be shorted directly line-to-line through both contactors — a bolted phase-to-phase fault, not just a wiring error.',
+  standard: 'General 3-phase induction motor operating principle (rotating magnetic field) — not tied to a specific IEC clause.',
+  common_mistakes: [
+    'Swapping all three phase leads instead of two — direction doesn\'t change, only the labeling does.',
+    'Treating electrical interlocking on the Control Circuit page as optional because "the buttons won\'t both be pressed" — see the reasoning above for exactly what happens if they are.',
+  ],
+}
 
 const COMPONENTS = [
   { id: 'mcb', label: 'Main MCB', desc: 'Main Circuit Breaker — first protection point from incoming 3-phase supply', color: '#3b82f6', icon: '⊡' },
   { id: 'spp', label: 'SPP', desc: 'Single Phase Preventer — monitors phase balance, disconnects on phase loss/reversal', color: '#8b5cf6', icon: '⊞' },
   { id: 'mpcb_h', label: 'MPCB Hoist', desc: 'Motor Protection CB for Hoist — sized at motor FLC, protects against overload', color: '#f5a623', icon: '⊟' },
-  { id: 'cont_h', label: 'Contactor H', desc: 'Hoist contactors (Up/Down pair) — rated 3x FLC, controlled by relay circuit', color: '#f0453d', icon: '⊗' },
+  { id: 'cont_h', label: 'Contactor H', desc: 'Hoist contactors (Up/Down pair) — rated 2x FLC for crane-duty AC-3 reversing, controlled by relay circuit', color: '#f0453d', icon: '⊗' },
   { id: 'motor_h', label: 'Hoist Motor', desc: 'Hoist motor — lifts and lowers load. Phase reversal changes direction.', color: '#3fb950', icon: 'M' },
   { id: 'mpcb_lt', label: 'MPCB LT', desc: 'Motor Protection CB for Long Travel motor', color: '#f5a623', icon: '⊟' },
   { id: 'cont_lt', label: 'Contactor LT', desc: 'LT contactors (Fwd/Rev pair) — phase swap reverses motor direction', color: '#f0453d', icon: '⊗' },
@@ -102,11 +139,18 @@ export default function PowerCircuit() {
             </div>
             <p className="text-text-dim text-xs leading-relaxed">
               Power and control wiring routed through separate cable ducts.
-              100mm gap between ducts. 75mm between contactors.
+              100mm gap between ducts, 75mm between contactors — panel-builder
+              practice, not a value calculated by this tool. See Panel Layout
+              for the full caveat on where these figures come from.
               Phase reversal at reverse contactor output.
             </p>
           </Card>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
+        <FormulaExplainer title="Why three separate protection devices instead of one?" explanation={PROTECTION_LAYERS_EXPLANATION} />
+        <FormulaExplainer title="Why do contactors only swap 2 of 3 phases to reverse a motor?" explanation={PHASE_REVERSAL_EXPLANATION} />
       </div>
     </div>
   )

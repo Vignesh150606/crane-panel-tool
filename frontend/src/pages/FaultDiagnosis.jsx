@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, AlertTriangle, ScanSearch, Settings2, Wrench } from 'lucide-react'
+import { Search, AlertTriangle, ScanSearch, Settings2, Wrench, Lightbulb } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import EmptyState from '../components/ui/EmptyState'
+import FormulaExplainer from '../components/ui/FormulaExplainer'
 
 const FAULTS = [
   {
@@ -14,6 +15,7 @@ const FAULTS = [
     diagnosis: 'SPP (Single Phase Preventer) detects the imbalance and opens its output contact, de-energizing the main contactor coil.',
     fix: 'Check incoming supply at MCB terminals with a multimeter on each phase. Identify the missing phase, check the upstream fuse/breaker and cable continuity.',
     component: 'SPP',
+    interviewTip: "Why can't the motor's own overload relay always catch this fast enough on its own? Total current can look close to normal while the two remaining phases each carry roughly double the per-phase load — a thermal element watching total current doesn't see that imbalance directly, which is exactly why a dedicated phase-loss device exists instead of relying on the overload relay alone.",
   },
   {
     id: 'overload_trip',
@@ -23,6 +25,7 @@ const FAULTS = [
     diagnosis: 'Thermal overload relay bimetallic strip heats up and trips its NC contact in the contactor coil circuit, de-energizing the contactor.',
     fix: 'Check for mechanical obstruction on crane motion. Verify overload setting matches motor FLC (should be ~105% of FLC). Allow cooldown before reset.',
     component: 'Overload Relay',
+    interviewTip: 'A candidate who immediately resets and re-runs the motor without checking for a mechanical jam first hasn\'t actually fixed anything — the relay tripped for a reason, and resetting clears the symptom, not the cause. This is the fault most likely to repeat within minutes if skipped.',
   },
   {
     id: 'limit_stuck',
@@ -32,6 +35,7 @@ const FAULTS = [
     diagnosis: 'The stuck-open NC contact permanently breaks the relay coil circuit for that direction, so the relay never energizes regardless of push button.',
     fix: 'Inspect limit switch roller for mechanical binding/debris. Check continuity of NC contact with a multimeter — should read 0Ω when not triggered.',
     component: 'Limit Switch',
+    interviewTip: '"No fault indication on panel" is the diagnostic giveaway here — electrically, a stuck-open limit switch looks identical to nobody pressing the button at all. Symptom #2 (the opposite direction still works fine) is what actually separates this from "the push button itself is broken."',
   },
   {
     id: 'contactor_chatter',
@@ -41,6 +45,7 @@ const FAULTS = [
     diagnosis: 'Insufficient holding force on the contactor armature causes it to partially release and re-energize repeatedly — a chattering cycle.',
     fix: 'Measure voltage at contactor coil terminals during operation. Check control transformer secondary voltage (should be 110V ±5%). Tighten coil terminal connections.',
     component: 'Contactor',
+    interviewTip: 'If chattering only happens under load (not at rest), suspect the control transformer secondary sagging under load rather than the contactor coil itself — check what else shares that 110V rail, since a marginal transformer can be "just adequate" until something else draws current on the same secondary at the same moment.',
   },
   {
     id: 'both_directions',
@@ -50,8 +55,26 @@ const FAULTS = [
     diagnosis: 'Without a proper interlock, both directional contactors can close simultaneously, creating a phase-to-phase short circuit through the motor.',
     fix: 'CRITICAL — de-energize immediately. Verify NC contact wiring between the relay pair (e.g. R1-R2). Check for welded/stuck relay contacts and replace if found.',
     component: 'Interlock Relay',
+    interviewTip: "This is the fault almost every crane-panel interview eventually asks about — it's the one failure mode here that can destroy a motor and panel in under a second, not minutes. See the Control Circuit page's explanation of why swapping two phases (not three) is what makes this specific failure a direct phase-to-phase short, not just a wiring inconvenience.",
   },
 ]
+
+const DIAGNOSTIC_METHOD_EXPLANATION = {
+  formula: 'Localize before you replace: test at the boundary between "working" and "not working," not at the component you first suspect.',
+  variables: [
+    { symbol: 'V(open contact)', name: 'Voltage measured across an open (non-conducting) contact, circuit energized', value: 'full line/control voltage', unit: 'V' },
+    { symbol: 'V(closed contact)', name: 'Voltage measured across a closed (conducting) contact, circuit energized', value: '≈0', unit: 'V' },
+  ],
+  substitution: 'Probe across each device in the control circuit, one at a time, from the supply toward the coil. The device with full voltage across it, while every device before it reads ~0V, is the open point.',
+  result: 'This finds the exact open contact in one pass instead of guessing which of five possible devices (E-Stop, overload NC, limit NC, interlock NC, coil) is the culprit.',
+  reasoning:
+    'This page\'s five fault scenarios all look different in symptom but are diagnosed the same underlying way: a relay-logic control circuit is a chain of series contacts feeding a coil, and exactly one thing is ever true — either a contact that should be closed is open, or a contact that should be open is closed. Rather than guessing which device (E-Stop, overload, limit switch, interlock relay) is at fault, an energized voltage-drop test finds it directly: with the circuit powered and the relevant push button held, probe across each device in sequence from supply to coil. Every closed contact reads ~0V across its terminals (current flows straight through). The instant you reach the open point, that device shows full control voltage across it — everything after it in the chain reads 0V because no current is flowing at all past that point. This localizes the fault to one device without opening a single connection or guessing based on symptom pattern-matching alone.',
+  standard: 'Standard electrical troubleshooting practice (voltage-drop/potential testing) — not tied to a specific IEC clause.',
+  common_mistakes: [
+    'Testing for continuity (resistance) on a live circuit instead of voltage — always de-energize before a continuity/ohmmeter check, never probe resistance on an energized control circuit.',
+    'Assuming the symptom points straight at one component (e.g. "chattering = bad contactor") without actually testing — several different faults can produce very similar symptoms, which is the whole reason a systematic test beats a guess.',
+  ],
+}
 
 export default function FaultDiagnosis() {
   const [selected, setSelected] = useState(null)
@@ -106,10 +129,23 @@ export default function FaultDiagnosis() {
                   <span className="text-amber text-sm font-semibold">Faulty Component: </span>
                   <span className="text-text text-sm">{fault.component}</span>
                 </Card>
+
+                {revealed.fix && (
+                  <Card style={{ borderColor: 'var(--color-amber)' }}>
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 text-amber">
+                      <Lightbulb size={16} /> Interview Insight
+                    </h3>
+                    <p className="text-text text-sm leading-relaxed">{fault.interviewTip}</p>
+                  </Card>
+                )}
               </motion.div>
             </AnimatePresence>
           )}
         </div>
+      </div>
+
+      <div className="mt-5">
+        <FormulaExplainer title="How do you localize a fault like this without guessing?" explanation={DIAGNOSTIC_METHOD_EXPLANATION} />
       </div>
     </div>
   )

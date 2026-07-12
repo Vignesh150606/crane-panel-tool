@@ -1,19 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { safeStorage } from '../lib/safeStorage'
 
-// Wrap localStorage so a private-browsing / storage-disabled environment
-// degrades to in-memory-only state instead of throwing and breaking the app.
-const safeStorage = {
-  getItem: (name) => {
-    try { return localStorage.getItem(name) } catch { return null }
-  },
-  setItem: (name, value) => {
-    try { localStorage.setItem(name, value) } catch { /* ignore — falls back to session-only state */ }
-  },
-  removeItem: (name) => {
-    try { localStorage.removeItem(name) } catch { /* ignore */ }
-  },
-}
 
 const initialProject = {
   name: '',
