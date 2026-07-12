@@ -43,6 +43,22 @@ const SIMULTANEOUS_PRESS_EXPLANATION = {
   ],
 }
 
+const SUPPLY_FAILURE_EXPLANATION = {
+  formula: 'No coil in this circuit is latching — every contactor and relay here is a plain AC coil held in only by continuous current.',
+  variables: [
+    { symbol: 'Supply', name: 'Incoming 415V feeding the 110V control transformer', value: 'boolean', unit: '' },
+  ],
+  substitution: 'Removing supply removes the field holding every coil closed, exactly like opening the E-Stop or Overload NC contact does.',
+  result: 'The visible effect (everything drops out) is identical to an E-Stop or overload trip — but the cause and the fix are different.',
+  reasoning:
+    'This is a standard, deliberate contactor behaviour called "no-volt release," and it is a safety feature, not a fault: an ordinary AC contactor has no memory of its own — its armature is only held in by the magnetic field from the coil\'s current, so the instant that current stops for any reason, the contactor drops out under spring pressure. E-Stop and the overload relay are protective devices that are meant to open — something on the panel decided to interrupt power on purpose, and a human is expected to investigate why before clearing it. A supply failure is different: nothing on the panel chose this, the incoming electricity actually went away (a tripped upstream breaker, a utility outage, a broken feeder). Because this circuit has no seal-in/latching relay anywhere, both cases behave identically once power actually flows again: if a push button is still being physically held down at that instant, the relay it commands re-energizes immediately, no fresh press required. For a crane, whether that is desirable is a genuinely debated design question — see the note on restart lockout in the overload explanation.',
+  standard: 'General AC contactor operating principle (electromagnetic armature actuation) — see any Siemens/Schneider/ABB contactor datasheet\'s "no-volt release" or "under-voltage release" description.',
+  common_mistakes: [
+    'Assuming a dropped-out contactor after a power dip is a wiring fault — for a plain (non-latching) coil, this is completely normal behaviour.',
+    'Wiring safety-critical loads to auto-restart on power return without asking whether that is actually the desired behaviour for that specific machine.',
+  ],
+}
+
 const PROTECTION_EXPLANATION = {
   formula: 'Control power reaches the branches only if: E-Stop NC closed AND Overload Relay NC closed',
   variables: [
@@ -52,11 +68,13 @@ const PROTECTION_EXPLANATION = {
   substitution: 'Both contacts sit in SERIES in the master 110V feed, upstream of both direction branches.',
   result: 'Either one opening kills power to BOTH directions at once — not just the one running.',
   reasoning:
-    'Two different failure philosophies, same wiring principle (normally-closed, fail-safe): E-Stop is a manually operated NC pushbutton — pressing it mechanically breaks the circuit immediately, and it physically latches down so it cannot be released by accident; a deliberate twist-and-release is required before anything can run again. The overload relay\'s NC contact is different: it opens automatically when the thermal element detects sustained overcurrent, protecting the motor windings from heat damage — but it does NOT reset itself even after the motor cools down. This is deliberate: if the overload relay is left to reset on its own, an intermittent fault could cycle the motor on and off indefinitely, overheating it a little more each time. Requiring a human to press a physical reset button forces someone to actually go find out WHY it tripped before running the motor again.',
+    'Two different failure philosophies, same wiring principle (normally-closed, fail-safe): E-Stop is a manually operated NC pushbutton — pressing it mechanically breaks the circuit immediately, and it physically latches down so it cannot be released by accident; a deliberate twist-and-release is required before anything can run again. The overload relay\'s NC contact is different: it opens automatically when the thermal element detects sustained overcurrent, protecting the motor windings from heat damage — but it does NOT reset itself even after the motor cools down. This is deliberate: if the overload relay is left to reset on its own, an intermittent fault could cycle the motor on and off indefinitely, overheating it a little more each time. Requiring a human to press a physical reset button forces someone to actually go find out WHY it tripped before running the motor again. ' +
+    'One more thing worth knowing at this level: this circuit is deliberately memory-less — press-and-hold PB(dir) is the only thing deciding whether a relay is energized, and Reset Overload only clears the fault flag, it does not force a fresh button press. So if you are still holding PB FWD when you clear the overload, motion resumes immediately with no separate restart action — that matches simple hold-to-run/deadman pendant control, standard for cranes precisely because releasing any button always stops motion. Some machinery safety practice (unexpected-start prevention, per ISO 12100 / EN 1037 principles) instead calls for an explicit restart lockout after any protective trip: clearing the fault should not be enough, the operator must release and re-press before anything moves. Both are legitimate design choices — a restart lockout needs a genuinely different circuit (a seal-in/latching auxiliary relay that PB(dir) only sets, never directly drives), which this simulator does not currently model.',
   standard: 'IS 13947-4-1 / IEC 60947-4-1 — thermal overload relay manual-reset requirement; IEC 60204-1 — E-stop category 0/1 requirements.',
   common_mistakes: [
     'Wiring the overload relay NC contact into only ONE direction branch instead of the shared master feed — a trip should stop the motor regardless of which direction it was running.',
     'Using an auto-reset overload relay on a crane — masks intermittent faults instead of forcing investigation.',
+    'Assuming a fault reset always requires a fresh button press — on a memory-less hold-to-run circuit like this one it doesn\'t, unless you deliberately add a seal-in/latching restart lockout.',
   ],
 }
 
@@ -68,11 +86,12 @@ export default function ControlCircuit() {
   const [limitRev, setLimitRev] = useState(false)
   const [eStop, setEStop] = useState(false)
   const [overloadTripped, setOverloadTripped] = useState(false)
+  const [supplyLost, setSupplyLost] = useState(false)
 
   const [activeDir, setActiveDir] = useState(null)
 
   const m = MOTIONS[motion]
-  const controlPowerOk = !eStop && !overloadTripped
+  const controlPowerOk = !supplyLost && !eStop && !overloadTripped
 
   // Pure transition function — given the NEXT value of whichever input just
   // changed (plus everything else as it currently stands), decides which
@@ -80,7 +99,7 @@ export default function ControlCircuit() {
   // event handler below (not from an effect), so there's exactly one state
   // update per user action instead of a derived render-then-effect cascade.
   const computeNextActive = (next, prev) => {
-    const powerOk = !next.eStop && !next.overload
+    const powerOk = !next.supplyLost && !next.eStop && !next.overload
     const fwdWantsRun = powerOk && next.pbFwd && !next.limitFwd
     const revWantsRun = powerOk && next.pbRev && !next.limitRev
     if (prev === 'FWD') return fwdWantsRun ? 'FWD' : (revWantsRun ? 'REV' : null)
@@ -91,7 +110,7 @@ export default function ControlCircuit() {
     return null
   }
 
-  const snapshot = (overrides = {}) => ({ pbFwd, pbRev, limitFwd, limitRev, eStop, overload: overloadTripped, ...overrides })
+  const snapshot = (overrides = {}) => ({ pbFwd, pbRev, limitFwd, limitRev, eStop, overload: overloadTripped, supplyLost, ...overrides })
   const applyTransition = (overrides) => setActiveDir((prev) => computeNextActive(snapshot(overrides), prev))
 
   const handlePbFwd = (v) => { setPbFwd(v); applyTransition({ pbFwd: v }) }
@@ -100,6 +119,7 @@ export default function ControlCircuit() {
   const handleLimitRev = (v) => { setLimitRev(v); applyTransition({ limitRev: v }) }
   const handleEStop = (v) => { setEStop(v); applyTransition({ eStop: v }) }
   const handleOverload = (v) => { setOverloadTripped(v); applyTransition({ overload: v }) }
+  const handleSupplyLost = (v) => { setSupplyLost(v); applyTransition({ supplyLost: v }) }
 
   const relayFwdEnergized = activeDir === 'FWD'
   const relayRevEnergized = activeDir === 'REV'
@@ -111,8 +131,22 @@ export default function ControlCircuit() {
     // relays require a deliberate, separate manual reset (see button below),
     // matching real hardware so the simulator doesn't teach a shortcut that
     // doesn't exist on an actual panel.
+    // Supply failure is also NOT cleared here — that's the utility restoring
+    // power, not something an operator "resets" from the panel.
   }
-  const resetOverload = () => setOverloadTripped(false)
+  // NOTE (fixed in this pass): this used to only clear the overloadTripped flag
+  // without recomputing activeDir, which left the relay OFF even if the PB was
+  // still being held through the trip — contradicting this circuit's own stated
+  // model (a memory-less, purely combinational hold-to-run circuit: see
+  // INTERLOCK_EXPLANATION.formula, which has no "requires a fresh press" term).
+  // On real hard-wired hold-to-run pendant controls with no seal-in relay, the
+  // instant the overload NC recloses, current already has a path through
+  // whichever PB is still physically held, and the contactor pulls in
+  // immediately — no separate restart action needed. If you later add a true
+  // seal-in/latching branch, this is the place to add a deliberate restart-lockout
+  // instead (see the Expert-tier note below).
+  const resetOverload = () => { setOverloadTripped(false); applyTransition({ overload: false }) }
+  const resetSupply = () => { setSupplyLost(false); applyTransition({ supplyLost: false }) }
 
   // Every downstream wire is gated by control power (E-stop NOT pressed AND
   // overload NOT tripped) — both sit in series in the master 110V feed, so
@@ -149,8 +183,9 @@ export default function ControlCircuit() {
                 whole circuit below. Either one opening removes power from BOTH
                 directions at once — drawn as its own row so the series
                 relationship to everything below is unambiguous. */}
-            <text x="20" y="18" fill="var(--color-danger)" fontSize="10" fontWeight="bold">MASTER FEED — E-STOP + OVERLOAD RELAY NC (in series, both directions)</text>
-            <line x1="20" y1="30" x2="100" y2="30" stroke={eStop ? 'var(--color-danger)' : 'var(--color-safe)'} strokeWidth="2.5" />
+            <text x="20" y="18" fill="var(--color-danger)" fontSize="10" fontWeight="bold">MASTER FEED — SUPPLY, E-STOP + OVERLOAD RELAY NC (in series, both directions)</text>
+            <SupplySource x={20} y={17} lost={supplyLost} />
+            <line x1="45" y1="30" x2="100" y2="30" stroke={(!supplyLost && eStop) ? 'var(--color-danger)' : (supplyLost ? 'var(--color-steel)' : 'var(--color-safe)')} strokeWidth="2.5" />
             <MasterNCContact x={100} y={17} tripped={eStop} label="E-STOP" />
             <line x1="160" y1="30" x2="260" y2="30" stroke={controlPowerOk ? 'var(--color-safe)' : 'var(--color-danger)'} className={controlPowerOk ? 'wire-flow' : ''} strokeWidth="2.5" />
             <MasterNCContact x={260} y={17} tripped={overloadTripped} label="OVERLOAD" />
@@ -207,6 +242,10 @@ export default function ControlCircuit() {
         <div className="flex flex-col gap-4">
           <Card>
             <h3 className="font-display text-danger font-semibold mb-3 flex items-center gap-1.5"><AlertOctagon size={15} /> Master Feed Protection</h3>
+            <Toggle checked={supplyLost} onChange={handleSupplyLost} label="Simulate main supply failure" description="415V incoming lost — the 110V control rail it feeds dies with it" />
+            {supplyLost && (
+              <Button variant="secondary" className="w-full mt-2 mb-1" icon={RotateCcw} onClick={resetSupply}>Restore Supply</Button>
+            )}
             <Toggle checked={eStop} onChange={handleEStop} label="Press E-Stop" description="Latching NC — cuts power to both directions instantly" />
             <Toggle checked={overloadTripped} onChange={handleOverload} label="Simulate overload trip" description="Thermal NC — does NOT self-reset" />
             {overloadTripped && (
@@ -223,7 +262,8 @@ export default function ControlCircuit() {
 
           <Card>
             <h3 className="font-display text-amber font-semibold mb-3">Live Status</h3>
-            <StatusRow label="Control power (E-Stop + Overload OK)" active={controlPowerOk} />
+            <StatusRow label="Main supply (415V)" active={!supplyLost} />
+            <StatusRow label="Control power (Supply + E-Stop + Overload OK)" active={controlPowerOk} />
             <StatusRow label={`Relay ${m.relayFwd} (${m.fwd})`} active={relayFwdEnergized} />
             <StatusRow label={`Relay ${m.relayRev} (${m.rev})`} active={relayRevEnergized} />
             <StatusRow label={`Contactor ${m.fwd}`} active={relayFwdEnergized} />
@@ -257,9 +297,29 @@ export default function ControlCircuit() {
           <FormulaExplainer title="Why is this interlock wired this way?" explanation={INTERLOCK_EXPLANATION} />
           <FormulaExplainer title="What if FWD and REV are pressed at the exact same instant?" explanation={SIMULTANEOUS_PRESS_EXPLANATION} />
           <FormulaExplainer title="Why does E-Stop cut both directions, and why doesn't overload self-reset?" explanation={PROTECTION_EXPLANATION} />
+          <FormulaExplainer title="Why does a supply failure look the same as E-Stop or overload, but isn't?" explanation={SUPPLY_FAILURE_EXPLANATION} />
         </div>
       </div>
     </div>
+  )
+}
+
+function SupplySource({ x, y, lost }) {
+  // Deliberately NOT drawn as a contact symbol (unlike MasterNCContact) — a
+  // supply failure is the source itself disappearing, not a switch opening.
+  // Teaching it as a "contact" would blur an important distinction covered in
+  // the explanation panel below: E-Stop/Overload are protective devices that
+  // deliberately open; a supply failure is an external event nothing on the
+  // panel controls.
+  return (
+    <g>
+      <rect x={x} y={y - 2} width="25" height="24" rx="3"
+        fill={lost ? 'var(--color-inset)' : 'color-mix(in srgb, var(--color-safe) 20%, transparent)'}
+        stroke={lost ? 'var(--color-danger)' : 'var(--color-safe)'} strokeWidth="2" />
+      <text x={x + 12} y={y + 13} textAnchor="middle" fill={lost ? 'var(--color-danger)' : 'var(--color-safe)'} fontSize="7" fontWeight="bold">415V</text>
+      <text x={x + 12} y={y - 6} textAnchor="middle" fill={lost ? 'var(--color-danger)' : 'var(--color-text-muted)'} fontSize="8" fontWeight="bold">SUPPLY</text>
+      <text x={x + 12} y={y + 34} textAnchor="middle" fill={lost ? 'var(--color-danger)' : 'var(--color-safe)'} fontSize="8">{lost ? 'LOST' : 'OK'}</text>
+    </g>
   )
 }
 
