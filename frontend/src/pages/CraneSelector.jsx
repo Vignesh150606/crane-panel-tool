@@ -194,8 +194,9 @@ function DetailPanel({ crane, onClose, onContinue }) {
             <Lightbulb size={15} className="text-safe shrink-0 mt-0.5" />
             <p className="text-xs text-text-muted leading-relaxed">
               Each motion (LT, CT, Hoist) requires a dedicated pair of contactors with interlock logic
-              to prevent simultaneous energisation of opposing directions. Contactor rating = 3x motor
-              full load current (IS/IEC 60947-4-1).
+              to prevent simultaneous energisation of opposing directions. Contactor rating &ge; 2x motor
+              full load current for crane duty (severe-duty reversing/jogging per IS/IEC 60947-4-1 AC-3
+              sizing practice) &mdash; see the Cable & Busbar / Load Calculator pages for the full derivation.
             </p>
           </div>
 

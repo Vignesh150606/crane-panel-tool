@@ -146,33 +146,13 @@ export const CRANE_TYPES = {
   }
 }
 
-// ── Engineering Calculation Constants ─────────────────────────
-export const ENGINEERING_CONSTANTS = {
-  HP_TO_KW: 0.746,
-  KW_TO_HP: 1.341,
-  CONTACTOR_RATING_MULTIPLIER: 3,   // contactor must be 3x motor FLC
-  CABLE_LENGTH_FACTOR: 1.5,         // stretch wire = 1.5x travel length
-  EFFICIENCY_FACTOR: 0.85,          // motor efficiency assumption
-  POWER_FACTOR: 0.85,               // typical industrial motor PF
-  VOLTAGE_3PHASE: 415,              // standard 3-phase voltage in India
-  STAR_DELTA_THRESHOLD_HP: 5,       // motors above 5HP need star-delta
-}
-
-// ── Standard Contactor Ratings (Amps) ─────────────────────────
-export const CONTACTOR_RATINGS = [9, 12, 16, 18, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 320, 400]
-
-// ── Standard MPCB Ratings (Amps) ──────────────────────────────
-export const MPCB_RATINGS = [0.63, 1, 1.6, 2.5, 4, 6.3, 10, 16, 25, 32, 40, 50, 63, 80, 100]
-
-// ── Cable Cross Section Standards (mm²) ───────────────────────
-export const CABLE_SIZES = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240]
-
-// ── Cable Current Capacity (Amps) for 3-core copper cable ─────
-export const CABLE_CAPACITY = {
-  1.5: 15, 2.5: 20, 4: 27, 6: 34, 10: 46,
-  16: 61, 25: 80, 35: 99, 50: 119, 70: 151,
-  95: 182, 120: 210, 150: 240, 185: 273, 240: 320
-}
+// NOTE: This file used to also export ENGINEERING_CONSTANTS, CONTACTOR_RATINGS,
+// MPCB_RATINGS, CABLE_SIZES and CABLE_CAPACITY as a second, frontend-side copy of
+// the sizing constants. They were dead code (nothing imported them — verified via
+// repo-wide grep) but still contained the disproven 3x contactor multiplier that
+// was corrected to 2x in backend/app/data/standards.py, the app's single source of
+// truth for every engineering constant (see README "Architecture"). Removed rather
+// than fixed in place, so there is exactly one place these numbers can ever live.
 
 // ── Duty Class Descriptions ────────────────────────────────────
 export const DUTY_CLASSES = {

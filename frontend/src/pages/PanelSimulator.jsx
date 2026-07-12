@@ -18,15 +18,19 @@ export default function PanelSimulator() {
 
   const activate = (m, dir) => {
     setActive((prev) => {
-      const newState = { ...prev }
       if (prev[m] === dir) {
-        newState[m] = null
         addLog(`${MOTIONS[m].label} ${dir} — DEACTIVATED`)
-      } else {
-        newState[m] = dir
-        addLog(`${MOTIONS[m].label} ${dir} — ACTIVATED (interlock blocks opposing direction)`)
+        return { ...prev, [m]: null }
       }
-      return newState
+      if (prev[m] !== null) {
+        // Real hardware: the energised relay's NC contact is already open in the
+        // opposing coil's circuit, so the opposing button physically cannot pull
+        // its contactor in. It must be de-energised (or E-Stopped) first.
+        addLog(`${MOTIONS[m].label} ${dir} — BLOCKED (interlock: ${prev[m]} still energised, stop it first)`)
+        return prev
+      }
+      addLog(`${MOTIONS[m].label} ${dir} — ACTIVATED (interlock blocks opposing direction)`)
+      return { ...prev, [m]: dir }
     })
   }
 
