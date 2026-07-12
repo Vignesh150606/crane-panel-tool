@@ -115,7 +115,16 @@ export default function PowerCircuit() {
 function PowerComponent({ x, y, w, h, id, label, icon, highlighted, onHover, color }) {
   const isHighlighted = highlighted === id
   return (
-    <g onClick={() => onHover(id)} style={{ cursor: 'pointer' }} className={isHighlighted ? 'animate-pulse' : ''}>
+    <g
+      onClick={() => onHover(id)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onHover(id) } }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isHighlighted}
+      aria-label={`${label}, show details`}
+      style={{ cursor: 'pointer' }}
+      className={isHighlighted ? 'animate-pulse' : ''}
+    >
       <rect x={x} y={y} width={w} height={h} rx="6"
         fill={isHighlighted ? `${color}33` : 'var(--color-inset)'}
         stroke={isHighlighted ? color : 'var(--color-steel)'} strokeWidth={isHighlighted ? 2.5 : 1.5} />

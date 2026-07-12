@@ -127,6 +127,50 @@ extend this (each function takes plain numbers and returns a plain number).
 
 ---
 
+## Engineering audit log
+
+This project has gone through several rounds of engineering + code review. Rather than
+a single "trust me" claim of correctness, here's what was actually checked and changed,
+so a reviewer (or you, six months from now) can see the trail:
+
+- **FLC calculation** — removed a double efficiency-derating bug that inflated full-load
+  current by ~27%.
+- **Contactor sizing** — corrected from an uncited 3× FLC multiplier to 2×, based on AC-3
+  severe-duty/reversing sizing practice (documented with reasoning in `standards.py`; no
+  source was found to support 3×, including a duplicate copy of the constant that was
+  quietly still using it in `craneData.js` — removed).
+- **Motor efficiency** — IE2/IE3 selection added from an IEC 60034-30-1 lookup table with
+  linear interpolation.
+- **Control circuit** — hand-traced against 21 real operating scenarios (Forward, Reverse,
+  E-Stop, overload trip + manual reset, limit switches, simultaneous button press, power
+  failure, rapid presses, etc.). Found and fixed: overload reset not recomputing relay
+  state after a fault cleared, and no way to simulate a main supply failure at all (both
+  now fixed — see `ControlCircuit.jsx`). Full scenario-by-scenario writeup available on
+  request; not checked into the repo as a doc file yet.
+- **PanelSimulator** — its interlock was cosmetic (displayed NC-contact wiring, but
+  clicking the opposing direction just switched over instead of being blocked). Fixed to
+  match real relay-logic behaviour.
+- **Accessibility** — the two interactive SVG diagrams (control circuit push buttons,
+  power circuit component explorer) were mouse-only; added keyboard focus, `role="button"`,
+  and Enter/Space activation.
+- **Performance** — route-level code splitting (`React.lazy`) cut the single ~508kB JS
+  bundle down to per-page chunks (largest is ~25kB); this was a direct fix for the
+  "chunk >500kB" build warning, not a speculative optimization.
+
+**Known limitations, stated plainly rather than glossed over:**
+- `PanelLayout.jsx`'s clearance figures (100mm/75mm) are disclosed on-page as
+  panel-builder practice, not a specific IEC 61439-6 clause — nobody has been able to
+  verify these against the actual (paywalled) standard text yet.
+- No automated test suite exists yet for `engineering.py`, despite it being the single
+  highest-value place to have one.
+- The tier system (Basic → Intermediate → Industrial → Expert) is fully built and used
+  consistently on the pages that have `FormulaExplainer` content, but not every page has
+  been rewritten to the same educational depth yet.
+- A full accessibility pass (contrast audit, screen-reader labeling beyond the two fixes
+  above) hasn't been done — only the two mouse-only controls found so far were fixed.
+
+---
+
 ## Pushing this update to Git
 
 From the project root, with your existing remote already configured:

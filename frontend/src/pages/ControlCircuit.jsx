@@ -342,7 +342,15 @@ function MasterNCContact({ x, y, tripped, label }) {
 
 function PushButton({ x, y, active, onClick, label }) {
   return (
-    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+    <g
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={active}
+      aria-label={`${label}${active ? ', held' : ''}`}
+      style={{ cursor: 'pointer' }}
+    >
       <circle cx={x + 15} cy={y + 15} r="14" fill={active ? 'color-mix(in srgb, var(--color-safe) 27%, transparent)' : 'var(--color-inset)'} stroke={active ? 'var(--color-safe)' : 'var(--color-text-muted)'} strokeWidth="2" />
       <circle cx={x + 15} cy={y + 15} r="7" fill={active ? 'var(--color-safe)' : 'var(--color-steel)'} />
       <text x={x + 15} y={y + 38} textAnchor="middle" fill={active ? 'var(--color-safe)' : 'var(--color-text-muted)'} fontSize="8">{label}</text>
