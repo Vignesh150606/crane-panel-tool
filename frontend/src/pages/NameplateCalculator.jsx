@@ -117,10 +117,10 @@ export default function NameplateCalculator() {
                 <div className="grid grid-cols-2 gap-2.5 mb-4">
                   <StatPlate label="Motor Power" value={`${result.hp} HP`} note={`${result.kw} kW`} />
                   <StatPlate label="Full Load Current" value={result.flc} unit="A" />
-                  <StatPlate label="Contactor Rating" value={result.contactor_rating} unit="A" tone="safe" note="3x FLC rule" />
-                  <StatPlate label="MPCB Rating" value={result.mpcb_rating} unit="A" tone="safe" />
+                  <StatPlate label="Contactor Rating" value={result.contactor_rating} unit="A" tone={result.status.contactor.sizing_status === 'undersized' ? 'danger' : 'safe'} note="2x FLC rule" />
+                  <StatPlate label="MPCB Rating" value={result.mpcb_rating} unit="A" tone={result.status.mpcb.sizing_status === 'undersized' ? 'danger' : 'safe'} />
                   <StatPlate label="Overload Setting" value={result.overload_setting} unit="A" tone="amber" />
-                  <StatPlate label="Cable Size" value={result.cable_size} unit="mm²" tone="info" />
+                  <StatPlate label="Cable Size" value={result.cable_size} unit="mm²" tone={result.status.cable.sizing_status === 'undersized' ? 'danger' : 'info'} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <EngineeringStatus label="Contactor" status={result.status.contactor} />

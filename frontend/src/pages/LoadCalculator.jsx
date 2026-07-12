@@ -214,16 +214,16 @@ function MotorResultCard({ motorKey, data }) {
           {data.hp_was_override && <Badge tone="info" dot={false}>Custom HP</Badge>}
         </div>
 
-        <div className="grid grid-cols-4 gap-2 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
           <StatPlate label="Motor HP" value={hp.toFixed(2)} unit="HP" />
           <StatPlate label="Motor kW" value={data.kw} unit="kW" />
           <StatPlate label="Efficiency" value={data.efficiency_pct} unit="%" />
           <StatPlate label="Full Load Current" value={flc.toFixed(2)} unit="A" tone="amber" />
         </div>
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <StatPlate label="Contactor" value={data.contactor_rating} unit="A" tone="safe" />
-          <StatPlate label="MPCB" value={data.mpcb_rating} unit="A" tone="safe" />
-          <StatPlate label="Cable Size" value={data.cable_size} unit="mm²" tone="safe" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+          <StatPlate label="Contactor" value={data.contactor_rating} unit="A" tone={data.status.contactor.sizing_status === 'undersized' ? 'danger' : 'safe'} />
+          <StatPlate label="MPCB" value={data.mpcb_rating} unit="A" tone={data.status.mpcb.sizing_status === 'undersized' ? 'danger' : 'safe'} />
+          <StatPlate label="Cable Size" value={data.cable_size} unit="mm²" tone={data.status.cable.sizing_status === 'undersized' ? 'danger' : 'safe'} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">

@@ -109,8 +109,15 @@ VOLTAGE_DROP_LIMIT_PCT = 5.0      # IS 732 practical limit for motor circuits
 
 # Safety margin bands used to classify a selected component against the
 # minimum it must satisfy. margin_pct = (selected - required) / required * 100
-MARGIN_UNDERSIZED = 0        # < this -> undersized (should not occur from these selectors, but
-                              # is possible when a user supplies a custom/override rating)
+MARGIN_UNDERSIZED = 0        # < this -> undersized. Verified this DOES occur from
+                              # the selectors themselves, not just user overrides:
+                              # select_cable/select_mpcb/select_from_series all fall
+                              # back to the top of their ratings table when nothing
+                              # in the table satisfies the requirement (e.g. FLC above
+                              # MPCB_RATINGS[-1] = 100A, reachable with an ordinary
+                              # valid input). The frontend now reflects this (StatPlate
+                              # tone follows sizing_status instead of a hardcoded
+                              # "safe" colour) rather than silently looking fine.
 MARGIN_ADEQUATE_MAX = 15      # 0-15%   -> adequate, on the tighter side
 MARGIN_OPTIMAL_MAX = 60       # 15-60%  -> optimal design margin
                                # > 60%   -> oversized (cost / space inefficiency)

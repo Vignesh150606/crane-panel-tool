@@ -90,7 +90,7 @@ export default function CableBusbar() {
           ) : result && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5">
               <div className="grid grid-cols-2 gap-2 mb-3">
-                <StatPlate label="Recommended Size" value={result.cable_size} unit="mm²" tone="safe" />
+                <StatPlate label="Recommended Size" value={result.cable_size} unit="mm²" tone={result.status.cable.sizing_status === 'undersized' ? 'danger' : 'safe'} />
                 <StatPlate label="Capacity" value={result.cable_capacity} unit="A" tone="info" />
                 <StatPlate label="Voltage Drop" value={result.voltage_drop_v} unit="V" tone="amber" />
                 <StatPlate label="Drop %" value={result.voltage_drop_pct} unit="%" tone={result.voltage_drop_exceeds_limit ? 'danger' : 'safe'} />
