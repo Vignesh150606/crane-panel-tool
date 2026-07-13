@@ -1,10 +1,13 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { ToastProvider } from './components/ui/Toast'
-import Navbar from './components/layout/Navbar'
+import Sidebar from './components/layout/Sidebar'
+import MobileHeader from './components/layout/MobileHeader'
 import WorkflowStepper from './components/layout/WorkflowStepper'
 import PageTransition from './components/layout/PageTransition'
+import { findNavItem } from './config/navigation'
+import { useUIStore } from './store/uiStore'
 
 // Home loads eagerly — it's the landing page, so it's needed for first paint
 // regardless of lazy-loading anything else.
@@ -39,6 +42,18 @@ function RouteFallback() {
   )
 }
 
+// Records the last few pages visited (excluding Home) so the sidebar can
+// surface a "Recently Visited" shortcut list. Silent — renders nothing.
+function RecentTracker() {
+  const location = useLocation()
+  const pushRecent = useUIStore((s) => s.pushRecent)
+  useEffect(() => {
+    const item = findNavItem(location.pathname)
+    if (item) pushRecent(item.path, item.label)
+  }, [location.pathname, pushRecent])
+  return null
+}
+
 function AnimatedRoutes() {
   const location = useLocation()
   return (
@@ -70,17 +85,21 @@ function AppShell() {
   const isReport = location.pathname === '/report'
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen lg:flex">
+      <RecentTracker />
       <div className="no-print">
-        <Navbar />
+        <Sidebar />
+        <MobileHeader />
+      </div>
+      <div className="flex-1 min-w-0">
         {!isReport && (
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-3">
+          <div className="no-print max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
             <WorkflowStepper />
           </div>
         )}
-      </div>
-      <div className={isReport ? '' : 'max-w-[1280px] mx-auto px-4 sm:px-6 py-8'}>
-        <AnimatedRoutes />
+        <div className={isReport ? '' : 'max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8'}>
+          <AnimatedRoutes />
+        </div>
       </div>
     </div>
   )

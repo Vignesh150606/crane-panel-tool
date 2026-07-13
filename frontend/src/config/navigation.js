@@ -1,0 +1,61 @@
+// Single source of truth for every page's nav metadata — path, label, icon,
+// description, and (for workflow pages) step number + the projectStore key
+// that marks it complete. Sidebar, Home, and WorkflowStepper all read from
+// here instead of keeping their own copies, which had already drifted out
+// of sync with each other (different labels/order in Navbar vs Home vs
+// WorkflowStepper before this pass).
+import {
+  Home as HomeIcon, Factory, Calculator, Cable, CircuitBoard, LayoutGrid,
+  ClipboardList, FileText, Tag, Triangle, Zap, Gamepad2, Search, BookOpen,
+} from 'lucide-react'
+
+export const HOME_ITEM = { path: '/', label: 'Home', icon: HomeIcon }
+
+export const HANDBOOK_ITEM = {
+  path: '/handbook',
+  label: 'Engineering Handbook',
+  icon: BookOpen,
+  description: 'Every formula used in this app in one place — equation, worked example, and where it\'s actually used. Start here if you\'re new.',
+  isNew: true,
+}
+
+// The seven-step guided design flow, in order. `key` maps to
+// projectStore.completedSteps() for the checkmark; steps without a key
+// (Panel Layout, Report) don't have a standalone "done" signal of their own.
+export const WORKFLOW_ITEMS = [
+  { path: '/cranes', step: 1, key: 'crane', label: 'Crane Selector', shortLabel: 'Crane', icon: Factory,
+    description: 'Compare EOT, Gantry, Jib and more. View specs, applications and diagrams.' },
+  { path: '/calculator', step: 2, key: 'load', label: 'Load Calculator', shortLabel: 'Load Calc', icon: Calculator,
+    description: 'Enter load in tons — get motor HP, contactor ratings, MPCB sizing, cable size.' },
+  { path: '/cable-busbar', step: 3, key: 'cable', label: 'Cable & Busbar', shortLabel: 'Cable/Busbar', icon: Cable,
+    description: 'Cable sizing with voltage drop, plus busbar vs. stretch-wire recommendation.' },
+  { path: '/control-circuit', step: 4, key: 'circuit', label: 'Control Circuit', shortLabel: 'Circuit', icon: CircuitBoard,
+    description: 'Live relay interlock circuit — press push buttons to see NO/NC states in real time.' },
+  { path: '/panel-layout', step: 5, key: null, label: 'Panel Layout', shortLabel: 'Panel Layout', icon: LayoutGrid,
+    description: '2D component placement following DIN rail mounting standards.' },
+  { path: '/bom', step: 6, key: 'bom', label: 'BOM Generator', shortLabel: 'BOM', icon: ClipboardList,
+    description: 'Auto-generate a complete bill of materials with part specs and quantities.' },
+  { path: '/report', step: 7, key: null, label: 'Project Report', shortLabel: 'Report', icon: FileText,
+    description: 'A professional, printable report combining every step of your design.' },
+]
+
+// Standalone calculators/simulators — not part of the numbered sequence,
+// usable in any order.
+export const REFERENCE_ITEMS = [
+  { path: '/nameplate', label: 'Nameplate Calculator', icon: Tag,
+    description: 'Enter motor nameplate values — get contactor, MPCB and overload ratings directly.' },
+  { path: '/star-delta', label: 'Star-Delta Calculator', icon: Triangle,
+    description: 'Compare DOL vs. star-delta starting current and torque, with switching sequence.' },
+  { path: '/power-circuit', label: 'Power Circuit', icon: Zap,
+    description: 'Animated MCB → SPP → MPCB → Contactor → Motor power flow diagram.' },
+  { path: '/simulator', label: 'Panel Simulator', icon: Gamepad2,
+    description: 'Live control panel with NO/NC contacts and interlock logic for CT, LT, Hoist.' },
+  { path: '/fault-diagnosis', label: 'Fault Diagnosis', icon: Search,
+    description: 'Common crane panel faults — reveal cause, diagnosis logic and fix step by step.' },
+]
+
+export const ALL_NAV_ITEMS = [HOME_ITEM, HANDBOOK_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS]
+
+export function findNavItem(path) {
+  return ALL_NAV_ITEMS.find((i) => i.path === path) || null
+}
