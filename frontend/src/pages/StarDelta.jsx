@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Triangle, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Triangle, CheckCircle2, AlertTriangle, BookOpen } from 'lucide-react'
 
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 import NumberField from '../components/ui/NumberField'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
@@ -49,6 +51,7 @@ export default function StarDelta() {
         icon={Triangle}
         title="Star-Delta Calculator"
         description="For motors above 5HP. Reduces starting current to 1/3 of DOL by starting in star, switching to delta for run."
+        actions={<Button as={Link} to="/handbook#star-delta-starting" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

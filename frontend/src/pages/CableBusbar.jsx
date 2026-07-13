@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Cable, Zap, ArrowRight } from 'lucide-react'
+import { Cable, Zap, ArrowRight, BookOpen } from 'lucide-react'
 
 import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
@@ -65,6 +65,7 @@ export default function CableBusbar() {
         icon={Cable}
         title="Cable & Busbar Designer"
         description="Calculate cable sizing with voltage drop, and get a busbar vs. stretch-wire recommendation for the travel span."
+        actions={<Button as={Link} to="/handbook#cable-sizing" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>}
       />
 
       {prefilled && (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Tag, Zap, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Tag, Zap, AlertTriangle, BookOpen } from 'lucide-react'
 
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
@@ -66,7 +67,8 @@ export default function NameplateCalculator() {
       <PageHeader
         icon={Tag}
         title="Nameplate Calculator"
-        description="Enter motor nameplate values to get contactor rating, MPCB setting, overload relay setting, and cable size — based on the 3x FLC rule and IS standards."
+        description="Enter motor nameplate values to get contactor rating, MPCB setting, overload relay setting, and cable size — sized against IS/IEC crane-duty practice."
+        actions={<Button as={Link} to="/handbook#contactor-sizing" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

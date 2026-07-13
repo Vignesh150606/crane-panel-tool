@@ -17,6 +17,7 @@ const PAGES = [
   ['NameplateCalculator', '/src/pages/NameplateCalculator.jsx'],
   ['FaultDiagnosis', '/src/pages/FaultDiagnosis.jsx'],
   ['ProjectReport', '/src/pages/ProjectReport.jsx'],
+  ['EngineeringHandbook', '/src/pages/EngineeringHandbook.jsx'],
 ]
 
 async function main() {

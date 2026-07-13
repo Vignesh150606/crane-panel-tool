@@ -28,6 +28,7 @@ const CableBusbar = lazy(() => import('./pages/CableBusbar'))
 const PanelLayout = lazy(() => import('./pages/PanelLayout'))
 const FaultDiagnosis = lazy(() => import('./pages/FaultDiagnosis'))
 const ProjectReport = lazy(() => import('./pages/ProjectReport'))
+const EngineeringHandbook = lazy(() => import('./pages/EngineeringHandbook'))
 
 function RouteFallback() {
   return (
@@ -57,6 +58,7 @@ function AnimatedRoutes() {
           <Route path="/panel-layout" element={<PageTransition><PanelLayout /></PageTransition>} />
           <Route path="/fault-diagnosis" element={<PageTransition><FaultDiagnosis /></PageTransition>} />
           <Route path="/report" element={<PageTransition><ProjectReport /></PageTransition>} />
+          <Route path="/handbook" element={<PageTransition><EngineeringHandbook /></PageTransition>} />
         </Routes>
       </Suspense>
     </AnimatePresence>

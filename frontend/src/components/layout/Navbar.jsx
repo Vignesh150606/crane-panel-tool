@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Factory, Calculator, Cable, CircuitBoard, LayoutGrid, ClipboardList,
-  FileText, Tag, Triangle, Zap, Gamepad2, Search, Menu, X,
+  FileText, Tag, Triangle, Zap, Gamepad2, Search, Menu, X, BookOpen,
 } from 'lucide-react'
 
 const WORKFLOW_ITEMS = [
@@ -17,6 +17,7 @@ const WORKFLOW_ITEMS = [
 ]
 
 const REFERENCE_ITEMS = [
+  { path: '/handbook', label: 'Engineering Handbook', icon: BookOpen },
   { path: '/nameplate', label: 'Nameplate Calculator', icon: Tag },
   { path: '/star-delta', label: 'Star-Delta', icon: Triangle },
   { path: '/power-circuit', label: 'Power Circuit', icon: Zap },

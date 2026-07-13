@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { CircuitBoard, Lightbulb, Palette, AlertOctagon, RotateCcw } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { CircuitBoard, Lightbulb, Palette, AlertOctagon, RotateCcw, BookOpen } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Toggle from '../components/ui/Toggle'
@@ -161,6 +162,7 @@ export default function ControlCircuit() {
         icon={CircuitBoard}
         title="Control Circuit Visualizer"
         description="Real relay interlock circuit from an EOT crane panel. Press push buttons to see relay energization and NO/NC contact states in real time."
+        actions={<Button as={Link} to="/handbook#forward-reverse-interlock" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>}
       />
 
       <div className="flex gap-2 mb-5 flex-wrap">
