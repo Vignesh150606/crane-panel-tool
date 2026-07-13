@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Settings, Factory, Calculator, Cable, CircuitBoard, LayoutGrid, ClipboardList,
-  FileText, Tag, Triangle, Zap, Gamepad2, Search, ArrowRight,
+  FileText, Tag, Triangle, Zap, Gamepad2, Search, ArrowRight, BookOpen,
 } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
 
@@ -17,6 +17,7 @@ const WORKFLOW_FEATURES = [
 ]
 
 const REFERENCE_FEATURES = [
+  { path: '/handbook', icon: BookOpen, title: 'Engineering Handbook', desc: 'Every formula used in this app in one place — equation, worked example, and where it\'s actually used. Start here if you\'re new.' },
   { path: '/nameplate', icon: Tag, title: 'Nameplate Calculator', desc: 'Enter motor nameplate values — get contactor, MPCB and overload ratings directly.' },
   { path: '/star-delta', icon: Triangle, title: 'Star-Delta Calculator', desc: 'Compare DOL vs. star-delta starting current and torque, with switching sequence.' },
   { path: '/power-circuit', icon: Zap, title: 'Power Circuit', desc: 'Animated MCB → SPP → MPCB → Contactor → Motor power flow diagram.' },

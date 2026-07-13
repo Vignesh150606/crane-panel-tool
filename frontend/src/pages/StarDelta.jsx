@@ -9,6 +9,7 @@ import Button from '../components/ui/Button'
 import NumberField from '../components/ui/NumberField'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
+import Skeleton from '../components/ui/Skeleton'
 import { calcStarDelta } from '../api/calculations'
 import { useProjectStore } from '../store/projectStore'
 
@@ -106,6 +107,9 @@ export default function StarDelta() {
         </Card>
 
         <div className="flex flex-col gap-4">
+          {loading && !result && (
+            <Card><Skeleton rows={5} className="h-6" /></Card>
+          )}
           {result && (
             <>
               <Card variant="computed">

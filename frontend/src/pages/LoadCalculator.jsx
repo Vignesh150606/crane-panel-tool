@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calculator, ArrowUpDown, MoveHorizontal, MoveVertical, ArrowRight, ArrowLeft, Zap, Check,
-  ClipboardList, Cog, Sigma, Flag, BookOpen,
+  ClipboardList, Cog, Sigma, Flag, BookOpen, AlertTriangle,
 } from 'lucide-react'
 
 import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
@@ -351,8 +351,11 @@ export default function LoadCalculator() {
               </div>
 
               {motorKeys.some((k) => results.motors[k].star_delta_required) && (
-                <div className="mb-5 px-4 py-3 bg-caution-dim/40 border border-amber/30 rounded-lg text-amber text-sm">
-                  One or more motors require Star-Delta starting (above the HP threshold for Direct-On-Line) — see the Star-Delta page to size the starter and timer.
+                <div className="mb-5 flex items-start gap-2 bg-caution-dim/50 border border-amber/30 rounded-md px-3 py-2">
+                  <AlertTriangle size={14} className="text-amber shrink-0 mt-0.5" />
+                  <p className="text-amber text-sm leading-relaxed">
+                    One or more motors require Star-Delta starting (above the HP threshold for Direct-On-Line) — see the Star-Delta page to size the starter and timer.
+                  </p>
                 </div>
               )}
 
