@@ -199,3 +199,137 @@ New Dashboard chunk: 6.1KB. Command palette + workspace chrome: ~4KB
 combined, loaded in the main bundle since they're global (not route-split).
 All still gzip well under 5KB per chunk; no new runtime dependencies.
 
+# Phase 3 — Interior Workspace Completion
+
+Scope note up front, same reasoning as Phase 1/2: the brief (10 sections —
+redesign every interior page, a full responsive/consistency/persona review)
+is more than one pass covers if taken literally. The two pages the brief
+calls "highest priority" (Load Calculator) and names explicitly with a long
+list of asks (Cable & Busbar) got full rebuilds. Dashboard got the three
+specific gaps the brief named that weren't already there. The remaining
+named pages (Control Circuit, Panel Layout, BOM, Project Report) were
+individually reviewed against the same bar and found to already meet it —
+that judgment call is written out below per page, not just asserted.
+
+## What shipped this phase
+
+**1. Load Calculator — full rebuild, wizard → workspace**
+The 5-step locked wizard (Motion Inputs → Motor Sizing → Components →
+Formulas → Recommendation, each gated behind the previous) is now a
+persistent input panel (left, sticky at `2xl`, editable at any time — no
+"unlock" concept, since one API call already returns everything) next to a
+4-tab results workspace: **Overview** (status banner computed from every
+component's `sizing_status` across all three motors, a Recharts grouped bar
+chart comparing HP and FLC per motor, compact per-motor stat cards,
+assumptions block), **Components** (the contactor/MPCB/cable recommendation
+cards with margin bars, now with a standards-grounded intro line instead of
+being the "third step" of five), **Understand Why** (unchanged
+FormulaExplainer content, just relocated into its own tab instead of forcing
+a scroll past it to reach the summary), **Recommendation** (the final
+summary table, unchanged logic). A short staged reveal animation (mechanical
+→ motor → protection → cable, ~900ms, skipped under
+`prefers-reduced-motion`) plays once per calculation — cosmetic sequencing
+only, the API still resolves in one round trip. No calculation logic
+touched; only presentation.
+
+**2. Cable & Busbar — full rebuild, calculation-form → decision tool**
+Single shared input card (FLC, run length, travel span — one API call
+already returned both cable and busbar results; the old two-card layout
+implied two separate calculations that never existed). Cable Sizing panel
+gained: a voltage-drop gauge (animated fill against the IS 732 limit line,
+not just two stat numbers), a visual comparison bar chart of the standard
+cable sizes around the selected one (`data/cableReference.js` — a
+display-only mirror of the backend's `CABLE_SIZES`/`CABLE_CAPACITY` table,
+clearly commented as never driving a calculation) with smaller/inadequate
+sizes shown dimmed-red and the selection highlighted, so "why this size and
+not a smaller one" is a chart, not just a sentence. Bus Bar panel gained an
+explicit decision-flow diagram (travel span → threshold compare → the two
+branches, non-chosen one dimmed) and an Industrial Notes block grounded in
+the same standards text already used elsewhere in the app (no new
+engineering claims introduced).
+
+**3. Project Dashboard — the three specific gaps the brief named**
+Added a **Recommended Next Step** card (single CTA — the first workflow
+item with no data yet, in the existing numbered order — distinct from the
+full incomplete-sections grid, which stays) and an **Engineering Warnings**
+card, separate from "incomplete sections" on purpose: incomplete means no
+data yet, warnings mean data exists and something in it needs attention
+(any component's `sizing_status === 'undersized'`, or
+`voltage_drop_exceeds_limit`). Verified via a scripted flow (calculate a
+motor, then a cable run long enough to trip the voltage-drop limit) that
+the warning card renders with the correct link and message, and that the
+next-step card points at the crane selector when no crane's been picked yet.
+
+**4. Reviewed against the new bar, left as-is (with reasoning)**
+- **Control Circuit** — already uses `PageHeader` + `Card` + a
+  `[1fr_340px]` split layout with the live relay diagram on the left and
+  status/legend cards on the right. Meets the same structural bar the new
+  Load Calculator/Cable & Busbar pages were just built to.
+- **Panel Layout** — already a split layout (component palette + 2D layout
+  canvas), diagram-driven, not form-heavy. Not touched.
+- **BOM Generator** — already table + summary-card driven, not a wall of
+  inputs. Not touched.
+- **Project Report** — intentionally a different template (print-formatted
+  engineering document, `Section`/`InfoGrid` pattern, hidden chrome on
+  print). Matching it to the dashboard-card visual language would work
+  against its actual job. Not touched.
+- **Engineering Handbook** — already rebuilt in Phase 2 (scrollspy nav,
+  bookmarks, tiered content). Brief's asks here ("more diagrams," "more
+  worked examples") are content-volume work across ~10 topics, not a
+  structural redesign — see Deferred.
+
+**5. Consistency sweep**
+Grepped all 15 pages for `PageHeader`/`Card` usage: 13 of 15 use both
+consistently; the 2 that don't (`Home.jsx`, `ProjectReport.jsx`) are
+deliberately different by role (landing hero, print document), not
+oversights.
+
+**6. Verified, not assumed**
+`npm run build` clean. Backend + frontend run locally; Playwright swept all
+15 routes at the three required viewports (1366×768, 1440×900, 1920×1080)
+checking `scrollWidth` vs `clientWidth` for horizontal overflow and
+console/page errors — zero overflow issues, zero console errors on any
+page/viewport combination. Load Calculator and Cable & Busbar were visually
+rendered and inspected screen-by-screen (empty state, calculated state,
+every tab, both required widths) before a tool-side image-rendering issue
+partway through the session stopped further screenshots from displaying;
+the Dashboard changes after that point were verified structurally instead —
+scripted flow confirming the warning/next-step cards render the right
+content and links (see #3) plus the same overflow/console sweep — but
+weren't re-confirmed by eye. Worth a visual spot-check before treating the
+Dashboard as fully signed off.
+
+## Deferred — not started this phase
+
+- **Panel Explorer, Challenge Mode, expanded export system, light mode** —
+  explicitly out of scope per this phase's brief, carried over.
+- **Engineering Handbook content depth** — brief asked for more diagrams,
+  more worked examples, better formula presentation across every topic.
+  The page's structure was already rebuilt in Phase 2; this is per-topic
+  content authoring (~10 topics) that wasn't attempted this pass.
+- **Wire tags / terminal tags / panel tags** inside Panel Layout and Control
+  Circuit — carried over from Phase 2, still not started.
+- **Persona-based release review** (Beginner Student / Final Year Student /
+  Electrical Engineer / Professor / Placement Interviewer walking the whole
+  app) — the brief's own section 10. Done implicitly for the two rebuilt
+  pages while designing them, not run as a formal separate pass across all
+  15 pages.
+- A visual re-confirmation of the Dashboard screenshots (see #6 above).
+
+## Files touched
+`LoadCalculator.jsx`, `CableBusbar.jsx` — full rewrites. `ProjectDashboard.jsx`
+— extended (two new cards + a warnings helper), existing sections
+unchanged. `data/cableReference.js` — new (display-only cable size/capacity
+reference table for the comparison chart).
+
+## Performance impact (Phase 3 delta)
+First use of Recharts in the app (previously an installed-but-unused
+dependency). It lands in its own shared `BarChart-*.js` chunk (~339KB /
+~100KB gzip) — Vite/Rollup automatically hoists it into one chunk shared
+between Load Calculator and Cable & Busbar rather than duplicating it, and
+it's still route-split so no other page pays for it. Own-code chunk sizes:
+Load Calculator 30.1KB (was 17KB), Cable & Busbar 20KB (was ~8KB), Dashboard
+8.6KB (was 6.1KB). The Recharts chunk is the one real size tradeoff this
+phase made in exchange for the visual comparison chart and motor-comparison
+chart the brief asked for — worth knowing about if bundle size on a free
+Vercel/Render tier ever becomes a concern.

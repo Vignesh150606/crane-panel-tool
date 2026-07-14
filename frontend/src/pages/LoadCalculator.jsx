@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Calculator, ArrowUpDown, MoveHorizontal, MoveVertical, ArrowRight, ArrowLeft, Zap, Check,
-  ClipboardList, Cog, Sigma, Flag, BookOpen, AlertTriangle,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from 'recharts'
+import {
+  Calculator, ArrowUpDown, MoveHorizontal, MoveVertical, ArrowRight, Zap, Check,
+  ClipboardList, Cog, Flag, BookOpen, AlertTriangle, Lightbulb, Gauge, Cable,
+  CheckCircle2, TrendingUp,
 } from 'lucide-react'
 
 import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
@@ -18,7 +22,6 @@ import EngineeringStatus from '../components/ui/EngineeringStatus'
 import AssumedVsComputed from '../components/ui/AssumedVsComputed'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
-import EmptyState from '../components/ui/EmptyState'
 import { useToast } from '../hooks/useToast'
 import { calcMotor } from '../api/calculations'
 import { validateFields, hasErrors, BOUNDS } from '../lib/validate'
@@ -36,23 +39,35 @@ const IE_CLASS_OPTIONS = [
 ]
 
 const MOTOR_META = {
-  hoist: { label: 'Hoist Motor', icon: ArrowUpDown },
-  lt: { label: 'Long Travel Motor', icon: MoveHorizontal },
-  ct: { label: 'Cross Travel Motor', icon: MoveVertical },
+  hoist: { label: 'Hoist Motor', shortLabel: 'Hoist', icon: ArrowUpDown },
+  lt: { label: 'Long Travel Motor', shortLabel: 'LT', icon: MoveHorizontal },
+  ct: { label: 'Cross Travel Motor', shortLabel: 'CT', icon: MoveVertical },
 }
 
-// Five steps, not the six a first pass at this suggested — "Calculation
-// Breakdown" and "Engineering Explanation" collapsed into one step
-// deliberately, because they're not two different sets of content here:
-// they're the Intermediate and Expert tiers of the exact same
-// FormulaExplainer blocks. Splitting them into separate steps would mean
-// either duplicating every block or showing the same block twice.
-const STEPS = [
-  { n: 1, key: 'input', label: 'Input Parameters', icon: ClipboardList },
-  { n: 2, key: 'motor', label: 'Motor Selection', icon: Cog },
-  { n: 3, key: 'components', label: 'Electrical Components', icon: Zap },
-  { n: 4, key: 'why', label: 'Understand Why', icon: Sigma },
-  { n: 5, key: 'recommend', label: 'Recommendation', icon: Flag },
+// Overview / Components / Understand Why / Recommendation — a tabbed
+// results workspace replaces the old locked 5-step wizard. All four are
+// simply different views onto the SAME calculation response (one API call
+// returns everything), so gating them behind sequential "unlock" steps was
+// pacing, not a real dependency. Tabs let a returning user jump straight to
+// what they need instead of re-walking steps 1-4 to reach the summary.
+const TABS = [
+  { key: 'overview', label: 'Overview', icon: Gauge },
+  { key: 'components', label: 'Components', icon: Cog },
+  { key: 'why', label: 'Understand Why', icon: Lightbulb },
+  { key: 'recommendation', label: 'Recommendation', icon: Flag },
+]
+
+// Purely presentational sequencing shown right after a calculation returns
+// — the API resolves all of this in one round trip, but revealing it as a
+// short build-up (mechanical -> electrical -> protection -> cable) mirrors
+// the actual dependency order of the engineering and gives the result some
+// weight instead of an instant wall of numbers. Skipped entirely under
+// prefers-reduced-motion.
+const CALC_STAGES = [
+  { key: 'mechanical', label: 'Computing mechanical load per motion', icon: ClipboardList },
+  { key: 'motor', label: 'Sizing motor HP, kW and full-load current', icon: Cog },
+  { key: 'protection', label: 'Selecting contactor, MPCB and overload setting', icon: Zap },
+  { key: 'cable', label: 'Sizing feeder cable for continuous duty', icon: Cable },
 ]
 
 export default function LoadCalculator() {
@@ -69,10 +84,13 @@ export default function LoadCalculator() {
   const [apiError, setApiError] = useState(null)
   const [prefilled, setPrefilled] = useState(!!storedInputs)
 
-  const [step, setStep] = useState(storedMotors ? 2 : 1)
+  const [activeTab, setActiveTab] = useState('overview')
   const [activeMotorKey, setActiveMotorKey] = useState(null)
+  const [revealing, setRevealing] = useState(false)
+  const [revealStage, setRevealStage] = useState(CALC_STAGES.length)
+  const revealTimers = useRef([])
+  useEffect(() => () => revealTimers.current.forEach(clearTimeout), [])
 
-  const unlocked = results ? 5 : 1
   const motorKeys = results ? Object.keys(results.motors) : []
   const activeKey = activeMotorKey && motorKeys.includes(activeMotorKey) ? activeMotorKey : motorKeys[0]
 
@@ -91,6 +109,25 @@ export default function LoadCalculator() {
       hoistSpeed: { value: inputs.hoistSpeed, label: 'Hoist speed', ...BOUNDS.speed },
       ltSpeed: { value: inputs.ltSpeed, label: 'Long travel speed', ...BOUNDS.speed },
       ctSpeed: { value: inputs.ctSpeed, label: 'Cross travel speed', ...BOUNDS.speed },
+    })
+  }
+
+  const startReveal = () => {
+    revealTimers.current.forEach(clearTimeout)
+    revealTimers.current = []
+    const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduced) { setRevealing(false); setRevealStage(CALC_STAGES.length); return }
+    setRevealing(true)
+    setRevealStage(0)
+    CALC_STAGES.forEach((_, i) => {
+      const t = setTimeout(() => {
+        setRevealStage(i + 1)
+        if (i === CALC_STAGES.length - 1) {
+          const t2 = setTimeout(() => setRevealing(false), 260)
+          revealTimers.current.push(t2)
+        }
+      }, 230 * (i + 1))
+      revealTimers.current.push(t)
     })
   }
 
@@ -113,7 +150,6 @@ export default function LoadCalculator() {
               hoist_hp_override: inputs.hoistHP,
               lt_hp_override: inputs.ltHP,
               ct_hp_override: inputs.ctHP,
-              // backend still requires speeds for shape consistency; use safe placeholders
               load_tons: inputs.load || 0.1,
             }
           : {}),
@@ -123,7 +159,8 @@ export default function LoadCalculator() {
       setMotors(inputs, data)
       setActiveMotorKey(Object.keys(data.motors)[0])
       toast.success('Motor ratings calculated')
-      setStep(2)
+      setActiveTab('overview')
+      startReveal()
     } catch (err) {
       setApiError(err.message)
     } finally {
@@ -131,300 +168,424 @@ export default function LoadCalculator() {
     }
   }
 
-  const goToStep = (n) => {
-    if (n <= unlocked) setStep(n)
-  }
+  const summary = results ? summarizeStatus(results, motorKeys) : null
+  const chartData = results
+    ? motorKeys.map((key) => ({
+        name: MOTOR_META[key].shortLabel,
+        HP: results.motors[key].hp,
+        FLC: results.motors[key].flc,
+      }))
+    : []
 
   return (
     <div>
       <PageHeader
         icon={Calculator}
         title="Load Calculator"
-        description="A guided walk from crane parameters to motor sizing, protection selection and the engineering reasoning behind every value."
+        description="Crane parameters in, motor sizing and protection selection out — with the engineering reasoning behind every value one tab away."
         actions={<Button as={Link} to="/handbook#motor-hp" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>}
       />
 
-      {prefilled && step === 1 && (
+      {prefilled && (
         <PrefillBanner
           message="Inputs restored from your last calculation in this project."
           onDismiss={() => { setInputs(DEFAULTS); setPrefilled(false) }}
         />
       )}
 
-      <CalculatorSteps current={step} unlocked={unlocked} onSelect={goToStep} />
+      <div className="grid grid-cols-1 2xl:grid-cols-[340px_1fr] gap-6 items-start">
+        {/* ── Persistent input panel — always visible and editable, not a one-time step ── */}
+        <Card padding="lg" className="2xl:sticky 2xl:top-6">
+          <h2 className="font-display text-amber font-semibold mb-1 text-sm">Crane Parameters</h2>
+          <p className="text-text-dim text-xs mb-4">
+            Enter rated load and motion speeds, or switch to custom HP if you already know the motor sizes.
+          </p>
 
-      <AnimatePresence mode="wait">
-        <motion.div key={step} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          <div className="mb-4">
+            <Toggle
+              checked={inputs.useCustomHP}
+              onChange={(v) => update('useCustomHP', v)}
+              label="Use custom motor HP"
+              description="Override the mechanical calculation and enter known HP directly"
+            />
+          </div>
 
-          {step === 1 && (
-            <div className="max-w-xl mx-auto">
-              <Card padding="lg">
-                <h2 className="font-display text-amber font-semibold mb-1">Step 1 — Input Parameters</h2>
-                <p className="text-text-dim text-sm mb-5">
-                  Enter the crane's rated load and motion speeds, or switch to custom HP if you already know the motor sizes.
-                </p>
-
-                <div className="mb-4">
-                  <Toggle
-                    checked={inputs.useCustomHP}
-                    onChange={(v) => update('useCustomHP', v)}
-                    label="Use custom motor HP"
-                    description="Override the mechanical calculation and enter known HP directly"
-                  />
-                </div>
-
-                {!inputs.useCustomHP ? (
-                  <>
-                    <NumberField label="Rated Load" value={inputs.load} onChange={(v) => update('load', v)} unit="tonnes" min={0.5} max={500} step={0.5} error={errors.load} />
-                    <NumberField label="Hoist Speed" value={inputs.hoistSpeed} onChange={(v) => update('hoistSpeed', v)} unit="m/min" min={1} max={30} error={errors.hoistSpeed} />
-                    <NumberField label="Long Travel Speed" value={inputs.ltSpeed} onChange={(v) => update('ltSpeed', v)} unit="m/min" min={5} max={80} error={errors.ltSpeed} />
-                    <NumberField label="Cross Travel Speed" value={inputs.ctSpeed} onChange={(v) => update('ctSpeed', v)} unit="m/min" min={5} max={40} error={errors.ctSpeed} />
-                  </>
-                ) : (
-                  <>
-                    <NumberField label="Hoist Motor HP" value={inputs.hoistHP} onChange={(v) => update('hoistHP', v)} unit="HP" error={errors.hoistHP} />
-                    <NumberField label="LT Motor HP" value={inputs.ltHP} onChange={(v) => update('ltHP', v)} unit="HP" error={errors.ltHP} />
-                    <NumberField label="CT Motor HP" value={inputs.ctHP} onChange={(v) => update('ctHP', v)} unit="HP" error={errors.ctHP} />
-                  </>
-                )}
-
-                <SelectField
-                  label="Motor Efficiency Class"
-                  value={inputs.ieClass}
-                  onChange={(v) => update('ieClass', v)}
-                  options={IE_CLASS_OPTIONS}
-                  helper="Efficiency is looked up per motor from IEC 60034-30-1, not one flat number — smaller motors are genuinely less efficient than larger ones at the same class."
-                />
-
-                <Button className="w-full mt-2" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
-                  {loading ? 'Calculating…' : results ? 'Recalculate & Continue' : 'Calculate & Continue'}
-                </Button>
-
-                {apiError && <div className="mt-3"><ErrorBanner message={apiError} onRetry={calculate} retrying={loading} /></div>}
-              </Card>
-            </div>
-          )}
-
-          {step === 2 && results && (
-            <div>
-              <StepHeading n={2} title="Motor Selection" desc="Mechanical requirement converted into a motor rating for each motion." />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                {motorKeys.map((key) => {
-                  const data = results.motors[key]
-                  const meta = MOTOR_META[key]
-                  const Icon = meta.icon
-                  return (
-                    <Card key={key} variant="computed">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-display font-semibold text-text flex items-center gap-2 text-sm">
-                          <Icon size={16} className="text-copper" /> {meta.label}
-                        </h3>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {data.star_delta_required && <Badge tone="caution">Star-Delta Required</Badge>}
-                        {data.hp_was_override && <Badge tone="info" dot={false}>Custom HP</Badge>}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <StatPlate label="Motor HP" value={data.hp} unit="HP" size="sm" />
-                        <StatPlate label="Motor kW" value={data.kw} unit="kW" size="sm" />
-                        <StatPlate label="Efficiency" value={data.efficiency_pct} unit="%" size="sm" />
-                        <StatPlate label="Full Load Current" value={data.flc} unit="A" tone="amber" size="sm" />
-                      </div>
-                    </Card>
-                  )
-                })}
+          {!inputs.useCustomHP ? (
+            <>
+              <NumberField label="Rated Load" value={inputs.load} onChange={(v) => update('load', v)} unit="tonnes" min={0.5} max={500} step={0.5} error={errors.load} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 gap-x-3">
+                <NumberField label="Hoist Speed" value={inputs.hoistSpeed} onChange={(v) => update('hoistSpeed', v)} unit="m/min" min={1} max={30} error={errors.hoistSpeed} />
+                <NumberField label="Long Travel Speed" value={inputs.ltSpeed} onChange={(v) => update('ltSpeed', v)} unit="m/min" min={5} max={80} error={errors.ltSpeed} />
+                <NumberField label="Cross Travel Speed" value={inputs.ctSpeed} onChange={(v) => update('ctSpeed', v)} unit="m/min" min={5} max={40} error={errors.ctSpeed} />
               </div>
-              <AssumedVsComputed assumptions={results.assumptions} />
-              <StepNav onBack={() => goToStep(1)} onNext={() => goToStep(3)} nextLabel="Electrical Components" />
+            </>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 gap-x-3">
+              <NumberField label="Hoist Motor HP" value={inputs.hoistHP} onChange={(v) => update('hoistHP', v)} unit="HP" error={errors.hoistHP} />
+              <NumberField label="LT Motor HP" value={inputs.ltHP} onChange={(v) => update('ltHP', v)} unit="HP" error={errors.ltHP} />
+              <NumberField label="CT Motor HP" value={inputs.ctHP} onChange={(v) => update('ctHP', v)} unit="HP" error={errors.ctHP} />
             </div>
           )}
 
-          {step === 3 && results && (
-            <div>
-              <StepHeading n={3} title="Electrical Component Selection" desc="Contactor, MPCB and cable sizing, each checked against its own margin band." />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                {motorKeys.map((key) => {
-                  const data = results.motors[key]
-                  const meta = MOTOR_META[key]
-                  const Icon = meta.icon
-                  return (
-                    <Card key={key} variant="computed">
-                      <h3 className="font-display font-semibold text-text flex items-center gap-2 text-sm mb-3">
-                        <Icon size={16} className="text-copper" /> {meta.label}
-                      </h3>
-                      <div className="grid grid-cols-1 gap-2 mb-3">
-                        <StatPlate label="Contactor" value={data.contactor_rating} unit="A" tone={data.status.contactor.sizing_status === 'undersized' ? 'danger' : 'safe'} />
-                        <StatPlate label="MPCB" value={data.mpcb_rating} unit="A" tone={data.status.mpcb.sizing_status === 'undersized' ? 'danger' : 'safe'} />
-                        <StatPlate label="Cable Size" value={data.cable_size} unit="mm²" tone={data.status.cable.sizing_status === 'undersized' ? 'danger' : 'safe'} />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <EngineeringStatus label="Contactor margin" status={data.status.contactor} />
-                        <EngineeringStatus label="MPCB margin" status={data.status.mpcb} />
-                        <EngineeringStatus label="Cable margin" status={data.status.cable} />
-                      </div>
-                    </Card>
-                  )
-                })}
-              </div>
-              <StepNav onBack={() => goToStep(2)} onNext={() => goToStep(4)} nextLabel="Understand Why" />
-            </div>
-          )}
+          <SelectField
+            label="Motor Efficiency Class"
+            value={inputs.ieClass}
+            onChange={(v) => update('ieClass', v)}
+            options={IE_CLASS_OPTIONS}
+            helper="Looked up per motor from IEC 60034-30-1, not one flat number."
+          />
 
-          {step === 4 && results && (
-            <div>
-              <StepHeading n={4} title="Understand Why" desc="Every value above, worked out — pick a tier above each block for as much or as little depth as you want." />
+          <Button className="w-full mt-1" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
+            {loading ? 'Calculating…' : results ? 'Recalculate' : 'Calculate'}
+          </Button>
 
-              <div className="flex gap-1.5 mb-4 flex-wrap">
-                {motorKeys.map((key) => {
-                  const meta = MOTOR_META[key]
-                  const Icon = meta.icon
+          {apiError && <div className="mt-3"><ErrorBanner message={apiError} onRetry={calculate} retrying={loading} /></div>}
+
+          <p className="text-[0.7rem] text-text-dim mt-3 leading-relaxed">
+            Defaults to 415V 3-phase supply and 0.85 power factor — see "Assumed vs. computed" in the Overview tab after calculating.
+          </p>
+        </Card>
+
+        {/* ── Results workspace ── */}
+        <div className="min-w-0">
+          {!results ? (
+            <WaitingPanel />
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
+                {TABS.map((t) => {
+                  const Icon = t.icon
+                  const active = t.key === activeTab
                   return (
                     <button
-                      key={key}
-                      onClick={() => setActiveMotorKey(key)}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold border-2 transition-colors cursor-pointer
-                        ${activeKey === key ? 'border-amber text-amber bg-surface' : 'border-steel text-text-muted hover:border-steel-light'}`}
+                      key={t.key}
+                      onClick={() => setActiveTab(t.key)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap border-2 transition-colors cursor-pointer
+                        ${active ? 'border-amber text-amber bg-surface' : 'border-steel text-text-muted hover:border-steel-light'}`}
                     >
-                      <Icon size={14} /> {meta.label}
+                      <Icon size={14} /> {t.label}
                     </button>
                   )
                 })}
               </div>
 
-              {activeKey && (
-                <div className="space-y-2">
-                  {results.motors[activeKey].explanations.motor_hp && (
-                    <FormulaExplainer title="Why this HP?" explanation={results.motors[activeKey].explanations.motor_hp} />
+              <AnimatePresence mode="wait">
+                <motion.div key={activeTab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+
+                  {activeTab === 'overview' && (
+                    <div className="space-y-5">
+                      {revealing ? (
+                        <CalcProgress stage={revealStage} />
+                      ) : (
+                        <>
+                          <StatusBanner summary={summary} />
+
+                          <Card>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <TrendingUp size={14} className="text-amber" />
+                              <h3 className="font-display text-sm font-semibold text-text">Motor Comparison</h3>
+                            </div>
+                            <p className="text-text-dim text-xs mb-3">Motor HP (mechanical rating) against full-load current (electrical draw) — the two numbers every downstream selection is built from.</p>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-steel)" vertical={false} />
+                                <XAxis dataKey="name" stroke="var(--color-text-dim)" fontSize={11} tickLine={false} axisLine={{ stroke: 'var(--color-steel)' }} />
+                                <YAxis yAxisId="hp" stroke="var(--color-text-dim)" fontSize={10} tickLine={false} axisLine={false} width={40} />
+                                <YAxis yAxisId="flc" orientation="right" stroke="var(--color-text-dim)" fontSize={10} tickLine={false} axisLine={false} width={40} />
+                                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-steel)', opacity: 0.2 }} />
+                                <Legend wrapperStyle={{ fontSize: 11, color: 'var(--color-text-dim)' }} />
+                                <Bar yAxisId="hp" dataKey="HP" name="Motor HP" fill="var(--color-info)" radius={[4, 4, 0, 0]} maxBarSize={44} />
+                                <Bar yAxisId="flc" dataKey="FLC" name="FLC (A)" fill="var(--color-amber)" radius={[4, 4, 0, 0]} maxBarSize={44} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </Card>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            {motorKeys.map((key) => {
+                              const data = results.motors[key]
+                              const meta = MOTOR_META[key]
+                              const Icon = meta.icon
+                              return (
+                                <Card key={key} variant="computed">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-display font-semibold text-text flex items-center gap-2 text-sm">
+                                      <Icon size={16} className="text-copper" /> {meta.label}
+                                    </h3>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5 mb-3">
+                                    {data.star_delta_required && <Badge tone="caution">Star-Delta Required</Badge>}
+                                    {data.hp_was_override && <Badge tone="info" dot={false}>Custom HP</Badge>}
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <StatPlate label="Motor HP" value={data.hp} unit="HP" size="sm" />
+                                    <StatPlate label="Motor kW" value={data.kw} unit="kW" size="sm" />
+                                    <StatPlate label="Efficiency" value={data.efficiency_pct} unit="%" size="sm" />
+                                    <StatPlate label="Full Load Current" value={data.flc} unit="A" tone="amber" size="sm" />
+                                  </div>
+                                </Card>
+                              )
+                            })}
+                          </div>
+
+                          <AssumedVsComputed assumptions={results.assumptions} />
+                        </>
+                      )}
+                    </div>
                   )}
-                  <FormulaExplainer title="Why this FLC?" explanation={results.motors[activeKey].explanations.flc} />
-                  <FormulaExplainer title="Why this contactor rating?" explanation={results.motors[activeKey].explanations.contactor} />
-                  <FormulaExplainer title="Why this MPCB rating?" explanation={results.motors[activeKey].explanations.mpcb} />
-                  <FormulaExplainer title="Why this overload setting?" explanation={results.motors[activeKey].explanations.overload} />
-                  <FormulaExplainer title="Why this cable size?" explanation={results.motors[activeKey].explanations.cable} />
-                </div>
-              )}
 
-              <StepNav onBack={() => goToStep(3)} onNext={() => goToStep(5)} nextLabel="Recommendation" className="mt-5" />
-            </div>
+                  {activeTab === 'components' && (
+                    <div>
+                      <p className="text-text-dim text-xs mb-4 max-w-2xl">
+                        Every rating below already carries the crane-duty margin — IEC 60947-4-1 AC-3 practice for repeated
+                        start/stop and locked-rotor current, not a general-purpose selection. Each block's margin bar shows
+                        how far the selected rating sits above the minimum requirement.
+                      </p>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {motorKeys.map((key) => {
+                          const data = results.motors[key]
+                          const meta = MOTOR_META[key]
+                          const Icon = meta.icon
+                          return (
+                            <Card key={key} variant="computed">
+                              <h3 className="font-display font-semibold text-text flex items-center gap-2 text-sm mb-3">
+                                <Icon size={16} className="text-copper" /> {meta.label}
+                              </h3>
+                              <div className="grid grid-cols-1 gap-2 mb-3">
+                                <StatPlate label="Contactor" value={data.contactor_rating} unit="A" tone={data.status.contactor.sizing_status === 'undersized' ? 'danger' : 'safe'} />
+                                <StatPlate label="MPCB" value={data.mpcb_rating} unit="A" tone={data.status.mpcb.sizing_status === 'undersized' ? 'danger' : 'safe'} />
+                                <StatPlate label="Cable Size" value={data.cable_size} unit="mm²" tone={data.status.cable.sizing_status === 'undersized' ? 'danger' : 'safe'} />
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <EngineeringStatus label="Contactor margin" status={data.status.contactor} />
+                                <EngineeringStatus label="MPCB margin" status={data.status.mpcb} />
+                                <EngineeringStatus label="Cable margin" status={data.status.cable} />
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'why' && (
+                    <div>
+                      <p className="text-text-dim text-xs mb-4">Pick a motor, then a tier above each block for as much or as little depth as you want.</p>
+                      <div className="flex gap-1.5 mb-4 flex-wrap">
+                        {motorKeys.map((key) => {
+                          const meta = MOTOR_META[key]
+                          const Icon = meta.icon
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => setActiveMotorKey(key)}
+                              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold border-2 transition-colors cursor-pointer
+                                ${activeKey === key ? 'border-amber text-amber bg-surface' : 'border-steel text-text-muted hover:border-steel-light'}`}
+                            >
+                              <Icon size={14} /> {meta.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {activeKey && (
+                        <div className="space-y-2">
+                          {results.motors[activeKey].explanations.motor_hp && (
+                            <FormulaExplainer title="Why this HP?" explanation={results.motors[activeKey].explanations.motor_hp} />
+                          )}
+                          <FormulaExplainer title="Why this FLC?" explanation={results.motors[activeKey].explanations.flc} />
+                          <FormulaExplainer title="Why this contactor rating?" explanation={results.motors[activeKey].explanations.contactor} />
+                          <FormulaExplainer title="Why this MPCB rating?" explanation={results.motors[activeKey].explanations.mpcb} />
+                          <FormulaExplainer title="Why this overload setting?" explanation={results.motors[activeKey].explanations.overload} />
+                          <FormulaExplainer title="Why this cable size?" explanation={results.motors[activeKey].explanations.cable} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'recommendation' && (
+                    <div>
+                      <div className="overflow-x-auto rounded-xl border border-steel mb-5">
+                        <table className="w-full border-collapse text-sm min-w-[520px]">
+                          <thead>
+                            <tr className="bg-surface">
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Motion</th>
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">HP / kW</th>
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">FLC</th>
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Contactor</th>
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">MPCB</th>
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Cable</th>
+                              <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {motorKeys.map((key, i) => {
+                              const data = results.motors[key]
+                              const statuses = [data.status.contactor.sizing_status, data.status.mpcb.sizing_status, data.status.cable.sizing_status]
+                              const worst = statuses.includes('undersized') ? 'undersized' : statuses.includes('adequate') ? 'adequate' : 'optimal'
+                              return (
+                                <tr key={key} className={i % 2 === 0 ? 'bg-inset' : 'bg-surface'}>
+                                  <td className="px-4 py-2.5 border-b border-steel text-text font-medium">{MOTOR_META[key].label}</td>
+                                  <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.hp} HP / {data.kw} kW</td>
+                                  <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.flc} A</td>
+                                  <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.contactor_rating} A</td>
+                                  <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.mpcb_rating} A</td>
+                                  <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.cable_size} mm²</td>
+                                  <td className="px-4 py-2.5 border-b border-steel">
+                                    <Badge tone={worst === 'undersized' ? 'danger' : worst === 'adequate' ? 'caution' : 'safe'} dot={false}>
+                                      {worst === 'undersized' ? 'Review required' : worst === 'adequate' ? 'Adequate' : 'Optimal'}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {motorKeys.some((k) => results.motors[k].star_delta_required) && (
+                        <div className="mb-5 flex items-start gap-2 bg-caution-dim/50 border border-amber/30 rounded-md px-3 py-2">
+                          <AlertTriangle size={14} className="text-amber shrink-0 mt-0.5" />
+                          <p className="text-amber text-sm leading-relaxed">
+                            One or more motors require Star-Delta starting (above the HP threshold for Direct-On-Line) — see the Star-Delta page to size the starter and timer.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end">
+                        <Button variant="outline" icon={ArrowRight} iconPosition="right" onClick={() => navigate('/cable-busbar')}>
+                          Continue to Cable & Busbar Sizing
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                </motion.div>
+              </AnimatePresence>
+            </>
           )}
-
-          {step === 5 && results && (
-            <div>
-              <StepHeading n={5} title="Industrial Recommendation" desc="Summary of every motor's sizing status, ready to carry forward into the rest of the panel design." />
-
-              <div className="overflow-x-auto rounded-xl border border-steel mb-5">
-                <table className="w-full border-collapse text-sm min-w-[520px]">
-                  <thead>
-                    <tr className="bg-surface">
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Motion</th>
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">HP / kW</th>
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">FLC</th>
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Contactor</th>
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">MPCB</th>
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Cable</th>
-                      <th className="text-left px-4 py-3 text-text-muted border-b border-steel">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {motorKeys.map((key, i) => {
-                      const data = results.motors[key]
-                      const statuses = [data.status.contactor.sizing_status, data.status.mpcb.sizing_status, data.status.cable.sizing_status]
-                      const worst = statuses.includes('undersized') ? 'undersized' : statuses.includes('adequate') ? 'adequate' : 'optimal'
-                      return (
-                        <tr key={key} className={i % 2 === 0 ? 'bg-inset' : 'bg-surface'}>
-                          <td className="px-4 py-2.5 border-b border-steel text-text font-medium">{MOTOR_META[key].label}</td>
-                          <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.hp} HP / {data.kw} kW</td>
-                          <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.flc} A</td>
-                          <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.contactor_rating} A</td>
-                          <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.mpcb_rating} A</td>
-                          <td className="px-4 py-2.5 border-b border-steel text-text-muted">{data.cable_size} mm²</td>
-                          <td className="px-4 py-2.5 border-b border-steel">
-                            <Badge tone={worst === 'undersized' ? 'danger' : worst === 'adequate' ? 'caution' : 'safe'} dot={false}>
-                              {worst === 'undersized' ? 'Review required' : worst === 'adequate' ? 'Adequate' : 'Optimal'}
-                            </Badge>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {motorKeys.some((k) => results.motors[k].star_delta_required) && (
-                <div className="mb-5 flex items-start gap-2 bg-caution-dim/50 border border-amber/30 rounded-md px-3 py-2">
-                  <AlertTriangle size={14} className="text-amber shrink-0 mt-0.5" />
-                  <p className="text-amber text-sm leading-relaxed">
-                    One or more motors require Star-Delta starting (above the HP threshold for Direct-On-Line) — see the Star-Delta page to size the starter and timer.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <Button variant="secondary" icon={ArrowLeft} onClick={() => goToStep(1)}>
-                  Edit Inputs
-                </Button>
-                <Button variant="outline" icon={ArrowRight} iconPosition="right" onClick={() => navigate('/cable-busbar')}>
-                  Continue to Cable & Busbar Sizing
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step !== 1 && !results && (
-            <EmptyState icon={Calculator} title="No results yet" description="Enter parameters in Step 1 and calculate to unlock the rest of the workflow." />
-          )}
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }
 
-function StepHeading({ n, title, desc }) {
+function summarizeStatus(results, motorKeys) {
+  const order = { undersized: 3, adequate: 2, oversized: 1, optimal: 0 }
+  let worst = 'optimal'
+  const problems = []
+  for (const key of motorKeys) {
+    const m = results.motors[key]
+    for (const comp of ['contactor', 'mpcb', 'cable']) {
+      const s = m.status[comp].sizing_status
+      if (order[s] > order[worst]) worst = s
+      if (s === 'undersized') problems.push(`${MOTOR_META[key].label} ${comp}`)
+    }
+  }
+  return { worst, problems }
+}
+
+const STATUS_CONFIG = {
+  undersized: { tone: 'danger', icon: AlertTriangle, title: 'Review required' },
+  adequate: { tone: 'caution', icon: AlertTriangle, title: 'Adequately sized, tight margins' },
+  oversized: { tone: 'caution', icon: TrendingUp, title: 'Some components oversized' },
+  optimal: { tone: 'safe', icon: CheckCircle2, title: 'Optimally sized' },
+}
+
+function StatusBanner({ summary }) {
+  const c = STATUS_CONFIG[summary.worst]
+  const Icon = c.icon
+  const colorClass = c.tone === 'danger' ? 'text-danger' : c.tone === 'caution' ? 'text-amber' : 'text-safe'
+  const bgClass = c.tone === 'danger' ? 'bg-danger-dim/40 border-danger/40' : c.tone === 'caution' ? 'bg-caution-dim/40 border-amber/40' : 'bg-safe-dim/30 border-safe/40'
+  const desc = summary.worst === 'undersized'
+    ? `${summary.problems.length} component${summary.problems.length > 1 ? 's are' : ' is'} below the required safety margin: ${summary.problems.join(', ')}.`
+    : summary.worst === 'adequate'
+    ? 'Every component clears its requirement, but on the tighter side — limited room to grow.'
+    : summary.worst === 'oversized'
+    ? 'Selections clear requirements with a wide margin — safe, but worth a cost/space check.'
+    : 'Every motor, contactor, MPCB and cable falls within the recommended design margin band.'
+
   return (
-    <div className="mb-5">
-      <h2 className="font-display text-amber font-semibold">Step {n} — {title}</h2>
-      <p className="text-text-dim text-sm mt-1">{desc}</p>
+    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 ${bgClass}`}>
+      <Icon size={18} className={`shrink-0 mt-0.5 ${colorClass}`} />
+      <div>
+        <div className={`font-semibold text-sm mb-0.5 ${colorClass}`}>{c.title}</div>
+        <p className="text-text-muted text-xs leading-relaxed">{desc}</p>
+      </div>
     </div>
   )
 }
 
-function StepNav({ onBack, onNext, nextLabel, className = '' }) {
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
   return (
-    <div className={`flex justify-between gap-3 ${className}`}>
-      <Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Back</Button>
-      <Button icon={ArrowRight} iconPosition="right" onClick={onNext}>{nextLabel}</Button>
+    <div className="bg-surface border border-steel rounded-md px-3 py-2 text-xs shadow-lg">
+      <div className="text-text font-semibold mb-1">{label} Motor</div>
+      {payload.map((p) => (
+        <div key={p.dataKey} className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
+          <span className="text-text-muted">{p.name}:</span>
+          <span className="font-mono text-text">{p.value}</span>
+        </div>
+      ))}
     </div>
   )
 }
 
-function CalculatorSteps({ current, unlocked, onSelect }) {
+function CalcProgress({ stage }) {
   return (
-    <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
-      {STEPS.map((s, i) => {
-        const isUnlocked = s.n <= unlocked
-        const isDone = s.n < current && isUnlocked
-        const isCurrent = s.n === current
-        const Icon = s.icon
-        return (
-          <div key={s.key} className="flex items-center shrink-0">
-            <button
-              onClick={() => onSelect(s.n)}
-              disabled={!isUnlocked}
-              aria-current={isCurrent ? 'step' : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
-                ${isCurrent
-                  ? 'bg-amber text-ink'
-                  : isUnlocked
-                    ? 'bg-inset text-text-muted hover:text-text border border-steel cursor-pointer'
-                    : 'bg-inset text-text-dim/50 border border-steel/50 cursor-not-allowed'}`}
+    <Card padding="lg">
+      <div className="max-w-sm mx-auto py-4 space-y-3.5">
+        {CALC_STAGES.map((s, i) => {
+          const Icon = s.icon
+          const done = stage > i
+          const active = stage === i
+          return (
+            <motion.div
+              key={s.key}
+              initial={{ opacity: 0.2, x: -6 }}
+              animate={{ opacity: done || active ? 1 : 0.3, x: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-3"
             >
-              {isDone ? <Check size={12} /> : <Icon size={12} />}
-              {s.n}. {s.label}
-            </button>
-            {i < STEPS.length - 1 && <div className={`w-4 h-px shrink-0 ${s.n < unlocked ? 'bg-amber' : 'bg-steel'}`} />}
+              <div className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-200
+                ${done ? 'bg-safe/15 border-safe text-safe' : active ? 'bg-amber/15 border-amber text-amber' : 'border-steel text-text-dim'}`}>
+                {done ? <Check size={13} /> : <Icon size={13} />}
+              </div>
+              <span className={`text-sm ${done || active ? 'text-text' : 'text-text-dim'}`}>{s.label}</span>
+            </motion.div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
+function WaitingPanel() {
+  return (
+    <Card padding="lg">
+      <div className="text-center py-6">
+        <div className="w-12 h-12 rounded-full bg-inset border border-steel flex items-center justify-center mx-auto mb-4">
+          <Calculator size={22} className="text-text-dim" strokeWidth={1.75} />
+        </div>
+        <p className="text-text-muted font-medium mb-1">Results appear here</p>
+        <p className="text-text-dim text-sm max-w-sm mx-auto mb-6">
+          Fill in the crane parameters on the left and calculate to see motor sizing, protection selection and cable sizing — all in one view.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
+        {[
+          { icon: Cog, label: 'Motor sizing', desc: 'HP, kW, FLC per motion' },
+          { icon: Zap, label: 'Protection', desc: 'Contactor, MPCB, overload' },
+          { icon: Cable, label: 'Cable sizing', desc: 'Feeder cross-section' },
+        ].map((f) => (
+          <div key={f.label} className="border border-dashed border-steel rounded-lg px-3 py-4 text-center">
+            <f.icon size={16} className="text-text-dim mx-auto mb-2" />
+            <div className="text-text-muted text-xs font-semibold mb-0.5">{f.label}</div>
+            <div className="text-text-dim text-[0.7rem]">{f.desc}</div>
           </div>
-        )
-      })}
-    </div>
+        ))}
+      </div>
+    </Card>
   )
 }

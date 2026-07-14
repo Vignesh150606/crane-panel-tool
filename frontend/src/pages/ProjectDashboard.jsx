@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, RotateCcw, ArrowRight, AlertTriangle,
-  FileText, Factory, Zap, Cable as CableIcon, ClipboardList,
+  FileText, Factory, Zap, Cable as CableIcon, ClipboardList, Compass, ShieldAlert,
 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
@@ -10,6 +10,44 @@ import Badge from '../components/ui/Badge'
 import { useProjectStore } from '../store/projectStore'
 import { CRANE_TYPES } from '../data/craneData'
 import { WORKFLOW_ITEMS } from '../config/navigation'
+
+const MOTOR_LABEL = { hoist: 'Hoist', lt: 'Long Travel', ct: 'Cross Travel' }
+const COMPONENT_LABEL = { contactor: 'contactor', mpcb: 'MPCB', cable: 'cable' }
+
+/**
+ * Distinct from "incomplete sections" below — this scans data that DOES
+ * exist for engineering-level concerns (a component came back undersized,
+ * or a voltage drop exceeds the IS 732 limit), the same sizing_status /
+ * voltage_drop_exceeds_limit fields the individual pages already surface,
+ * just rolled up in one place so a warning doesn't stay buried on a page
+ * nobody's revisited.
+ */
+function getEngineeringWarnings(store) {
+  const warnings = []
+  if (store.motors) {
+    for (const [key, m] of Object.entries(store.motors.motors)) {
+      for (const comp of ['contactor', 'mpcb', 'cable']) {
+        if (m.status[comp].sizing_status === 'undersized') {
+          warnings.push({
+            id: `${key}-${comp}`,
+            text: `${MOTOR_LABEL[key]} motor's ${COMPONENT_LABEL[comp]} is undersized for the calculated load.`,
+            link: '/calculator',
+          })
+        }
+      }
+    }
+  }
+  if (store.cableBusbar?.result) {
+    const r = store.cableBusbar.result
+    if (r.status.cable.sizing_status === 'undersized') {
+      warnings.push({ id: 'cable-undersized', text: 'Selected feeder cable is undersized for the required current.', link: '/cable-busbar' })
+    }
+    if (r.voltage_drop_exceeds_limit) {
+      warnings.push({ id: 'voltage-drop', text: `Voltage drop (${r.voltage_drop_pct}%) exceeds the ${r.voltage_drop_limit_pct}% IS 732 limit.`, link: '/cable-busbar' })
+    }
+  }
+  return warnings
+}
 
 export default function ProjectDashboard() {
   const store = useProjectStore()
@@ -22,8 +60,10 @@ export default function ProjectDashboard() {
   const pct = Math.round((doneCount / totalCount) * 100)
 
   // Which numbered workflow steps have no data yet — used for both the
-  // warnings list and the incomplete-sections list.
+  // recommended-next-task callout and the incomplete-sections list.
   const incomplete = WORKFLOW_ITEMS.filter((w) => w.key && !steps[w.key])
+  const nextTask = incomplete[0] || (doneCount === totalCount ? WORKFLOW_ITEMS.find((w) => w.path === '/report') : null)
+  const warnings = getEngineeringWarnings(store)
 
   return (
     <div>
@@ -76,7 +116,41 @@ export default function ProjectDashboard() {
         </div>
       </Card>
 
-      {/* Warnings / incomplete sections */}
+      {/* Recommended next step + engineering warnings — two different signals:
+          one says what's missing, the other says what's already wrong. */}
+      {(nextTask || warnings.length > 0) && (
+        <div className="grid sm:grid-cols-2 gap-5 mb-6">
+          {nextTask && (
+            <Card className="border-amber/40 bg-amber/5">
+              <div className="flex items-center gap-1.5 text-amber font-semibold text-sm mb-2.5">
+                <Compass size={15} /> Recommended Next Step
+              </div>
+              <div className="text-text font-semibold text-sm mb-1">{nextTask.label}</div>
+              <p className="text-text-muted text-xs leading-relaxed mb-3">{nextTask.description}</p>
+              <Link to={nextTask.path} className="inline-flex items-center gap-1.5 bg-amber text-ink text-xs font-semibold rounded-md px-3 py-1.5 hover:bg-amber-dim transition-colors">
+                Continue <ArrowRight size={12} />
+              </Link>
+            </Card>
+          )}
+          {warnings.length > 0 && (
+            <Card variant="danger">
+              <div className="flex items-center gap-1.5 text-danger font-semibold text-sm mb-2.5">
+                <ShieldAlert size={15} /> Engineering Warnings
+              </div>
+              <div className="space-y-1.5">
+                {warnings.map((w) => (
+                  <Link key={w.id} to={w.link} className="flex items-center justify-between gap-2 bg-inset border border-danger/30 rounded-lg px-3 py-2 text-xs hover:border-danger/60 transition-colors group">
+                    <span className="text-text-muted">{w.text}</span>
+                    <ArrowRight size={12} className="text-text-dim group-hover:text-danger transition-colors shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Missing inputs */}
       {incomplete.length > 0 && (
         <Card variant="warning" className="mb-6">
           <div className="flex items-center gap-1.5 text-amber font-semibold text-sm mb-2.5">
