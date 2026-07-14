@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Check, HelpCircle, ArrowRight, History } from 'lucide-react'
-import { HOME_ITEM, HANDBOOK_ITEM, WORKFLOW_ITEMS, REFERENCE_ITEMS, findNavItem } from '../../config/navigation'
+import { HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, WORKFLOW_ITEMS, REFERENCE_ITEMS, findNavItem } from '../../config/navigation'
 import { useProjectStore } from '../../store/projectStore'
 import { useUIStore } from '../../store/uiStore'
 
@@ -59,6 +59,7 @@ export default function SidebarContent({ collapsed = false, onNavigate }) {
     <nav aria-label="Primary" className="flex-1 overflow-y-auto px-2.5 pb-3">
       <SectionLabel collapsed={collapsed}>Quick Access</SectionLabel>
       <Row to={HOME_ITEM.path} icon={HOME_ITEM.icon} label={HOME_ITEM.label} active={isActive('/')} collapsed={collapsed} onNavigate={onNavigate} />
+      <Row to={DASHBOARD_ITEM.path} icon={DASHBOARD_ITEM.icon} label={DASHBOARD_ITEM.label} active={isActive(DASHBOARD_ITEM.path)} collapsed={collapsed} onNavigate={onNavigate} />
       <Row to={HANDBOOK_ITEM.path} icon={HANDBOOK_ITEM.icon} label={HANDBOOK_ITEM.label} active={isActive(HANDBOOK_ITEM.path)} collapsed={collapsed} onNavigate={onNavigate} badge="New" />
 
       {recent.length > 0 && (

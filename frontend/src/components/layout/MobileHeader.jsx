@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Zap, Menu, X } from 'lucide-react'
+import { Zap, Menu, X, Search } from 'lucide-react'
 import SidebarContent from './SidebarContent'
 
-export default function MobileHeader() {
+export default function MobileHeader({ onOpenSearch }) {
   const [open, setOpen] = useState(false)
   const location = useLocation()
 
@@ -33,14 +33,23 @@ export default function MobileHeader() {
             <div className="text-[0.65rem] text-text-dim tracking-wide">DESIGN TOOL</div>
           </div>
         </Link>
-        <button
-          onClick={() => setOpen(true)}
-          className="p-2 -mr-2 text-text-muted hover:text-text cursor-pointer"
-          aria-label="Open menu"
-          aria-expanded={open}
-        >
-          <Menu size={22} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onOpenSearch}
+            className="p-2 text-text-muted hover:text-text cursor-pointer"
+            aria-label="Search"
+          >
+            <Search size={20} />
+          </button>
+          <button
+            onClick={() => setOpen(true)}
+            className="p-2 -mr-2 text-text-muted hover:text-text cursor-pointer"
+            aria-label="Open menu"
+            aria-expanded={open}
+          >
+            <Menu size={22} />
+          </button>
+        </div>
       </header>
 
       <AnimatePresence>

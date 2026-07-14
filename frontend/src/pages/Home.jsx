@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2 } from 'lucide-react'
+import { ArrowRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2, LayoutDashboard } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
 import { WORKFLOW_ITEMS, REFERENCE_ITEMS, HANDBOOK_ITEM } from '../config/navigation'
 import PanelSchematic from '../components/illustrations/PanelSchematic'
@@ -47,6 +47,11 @@ export default function Home() {
             <Link to="/simulator" className="border-2 border-amber text-amber px-6 py-3 rounded-lg font-semibold hover:bg-amber/10 transition-colors inline-flex items-center gap-2">
               <Gamepad2 size={16} /> Open Panel Simulator
             </Link>
+            {hasProject && (
+              <Link to="/dashboard" className="text-text-muted px-6 py-3 rounded-lg font-semibold hover:text-amber transition-colors inline-flex items-center gap-2">
+                <LayoutDashboard size={16} /> View Dashboard
+              </Link>
+            )}
           </motion.div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.22 }}
@@ -68,7 +73,7 @@ export default function Home() {
 
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.1 }}
-          className="relative hidden sm:block"
+          className="relative hidden sm:block overflow-hidden rounded-[2rem]"
         >
           <div className="absolute -inset-6 bg-amber/5 rounded-[2rem] blur-2xl -z-10" />
           <PanelSchematic className="w-full h-auto drop-shadow-[0_20px_40px_rgba(0,0,0,0.35)]" />

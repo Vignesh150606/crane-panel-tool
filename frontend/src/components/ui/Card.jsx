@@ -5,6 +5,7 @@ const VARIANTS = {
   computed: 'bg-surface border-steel relative pl-5 before:content-[\'\'] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-copper before:to-copper-dim',
   inset: 'bg-inset border-steel shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]',
   danger: 'bg-surface border-danger/50',
+  warning: 'bg-caution-dim/30 border-amber/40',
   highlight: 'bg-surface border-amber',
 }
 

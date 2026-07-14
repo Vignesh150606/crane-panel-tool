@@ -7,9 +7,17 @@
 import {
   Home as HomeIcon, Factory, Calculator, Cable, CircuitBoard, LayoutGrid,
   ClipboardList, FileText, Tag, Triangle, Zap, Gamepad2, Search, BookOpen,
+  LayoutDashboard,
 } from 'lucide-react'
 
 export const HOME_ITEM = { path: '/', label: 'Home', icon: HomeIcon }
+
+export const DASHBOARD_ITEM = {
+  path: '/dashboard',
+  label: 'Project Dashboard',
+  icon: LayoutDashboard,
+  description: 'A live snapshot of your current design — crane, motors, cable and BOM, updated automatically as you work.',
+}
 
 export const HANDBOOK_ITEM = {
   path: '/handbook',
@@ -54,7 +62,7 @@ export const REFERENCE_ITEMS = [
     description: 'Common crane panel faults — reveal cause, diagnosis logic and fix step by step.' },
 ]
 
-export const ALL_NAV_ITEMS = [HOME_ITEM, HANDBOOK_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS]
+export const ALL_NAV_ITEMS = [HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS]
 
 export function findNavItem(path) {
   return ALL_NAV_ITEMS.find((i) => i.path === path) || null

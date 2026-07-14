@@ -1,22 +1,47 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, BookMarked, AlertTriangle, Lightbulb, ArrowRight, GraduationCap } from 'lucide-react'
+import { ChevronDown, BookMarked, AlertTriangle, Lightbulb, ArrowRight, GraduationCap, Bookmark } from 'lucide-react'
+import { useHandbookStore } from '../../store/handbookStore'
 
 export default function HandbookEntry({ topic, defaultOpen = false, forwardedRef }) {
   const [open, setOpen] = useState(defaultOpen)
+  const bookmarked = useHandbookStore((s) => s.isBookmarked(topic.id))
+  const toggleBookmark = useHandbookStore((s) => s.toggleBookmark)
+  const pushRecentTopic = useHandbookStore((s) => s.pushRecentTopic)
+
+  function handleToggle() {
+    setOpen((o) => {
+      const next = !o
+      if (next) pushRecentTopic(topic.id)
+      return next
+    })
+  }
 
   return (
     <div id={topic.id} ref={forwardedRef} className="border border-steel rounded-lg overflow-hidden bg-inset scroll-mt-24">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer hover:bg-surface-hover transition-colors"
         aria-expanded={open}
       >
         <span className="text-sm font-semibold text-text">{topic.title}</span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown size={16} className="text-text-dim shrink-0" />
-        </motion.span>
+        <span className="flex items-center gap-1 shrink-0">
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); toggleBookmark(topic.id) }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); toggleBookmark(topic.id) } }}
+            aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark this topic'}
+            aria-pressed={bookmarked}
+            className="p-1 -m-1 rounded hover:bg-surface cursor-pointer"
+          >
+            <Bookmark size={14} className={bookmarked ? 'fill-amber text-amber' : 'text-text-dim'} />
+          </span>
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+            <ChevronDown size={16} className="text-text-dim" />
+          </motion.span>
+        </span>
       </button>
 
       <AnimatePresence initial={false}>

@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { BookOpen, Search, HelpCircle, Tag } from 'lucide-react'
+import { BookOpen, Search, HelpCircle, Tag, Bookmark, History, ChevronRight } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import HandbookEntry from '../components/ui/HandbookEntry'
 import { HANDBOOK_SECTIONS, PROTECTION_GLOSSARY, IEC_SYMBOLS } from '../data/handbookContent'
+import { useHandbookStore } from '../store/handbookStore'
 
 const FAQ = [
   {
@@ -25,10 +26,27 @@ const FAQ = [
   },
 ]
 
+const STATIC_SECTIONS = [
+  { id: 'glossary', title: 'Glossary', icon: Tag },
+  { id: 'iec-symbols', title: 'IEC Symbols', icon: Tag },
+  { id: 'faq', title: 'FAQ', icon: HelpCircle },
+]
+
+function findTopicById(id) {
+  for (const section of HANDBOOK_SECTIONS) {
+    const t = section.topics.find((t) => t.id === id)
+    if (t) return t
+  }
+  return null
+}
+
 export default function EngineeringHandbook() {
   const location = useLocation()
   const [search, setSearch] = useState('')
+  const [activeId, setActiveId] = useState(HANDBOOK_SECTIONS[0]?.id)
   const openedFromHash = useRef(false)
+  const bookmarks = useHandbookStore((s) => s.bookmarks)
+  const recent = useHandbookStore((s) => s.recent)
 
   const filteredSections = useMemo(() => {
     if (!search.trim()) return HANDBOOK_SECTIONS
@@ -45,6 +63,9 @@ export default function EngineeringHandbook() {
       .filter((section) => section.topics.length > 0)
   }, [search])
 
+  // Deep-link support: /handbook#some-topic-id scrolls to and auto-expands
+  // that entry. Unchanged from before, still the mechanism every
+  // "Learn the theory" link across the app relies on.
   useEffect(() => {
     if (openedFromHash.current) return
     const hash = location.hash?.replace('#', '')
@@ -55,12 +76,26 @@ export default function EngineeringHandbook() {
       setTimeout(() => {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
         const btn = el.querySelector('button')
-        // Auto-open the linked entry so a "Learn the theory" link doesn't
-        // land on a collapsed card the visitor then has to find and click.
         if (btn && el.querySelector('[aria-expanded="false"]')) btn.click()
       }, 150)
     }
   }, [location.hash])
+
+  // Lightweight scrollspy — highlights whichever section is currently
+  // nearest the top of the viewport in the left nav, doc-site style.
+  useEffect(() => {
+    const sections = document.querySelectorAll('section[id]')
+    if (sections.length === 0) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible[0]) setActiveId(visible[0].target.id)
+      },
+      { rootMargin: '-15% 0px -70% 0px', threshold: 0 }
+    )
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [filteredSections])
 
   return (
     <div>
@@ -70,99 +105,183 @@ export default function EngineeringHandbook() {
         description="Every formula and control-circuit concept used anywhere in this app, in one place — equation, variables, a worked example, and where it's actually used."
       />
 
-      <div className="relative mb-6 max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search formulas, e.g. &quot;contactor&quot;, &quot;voltage drop&quot;…"
-          className="w-full pl-9 pr-3 py-2.5 bg-inset border border-steel rounded-lg text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-amber transition-colors"
-        />
-      </div>
+      <div className="grid lg:grid-cols-[260px_1fr] gap-8 items-start">
+        {/* ── Sticky left navigation ─────────────────────────────────── */}
+        <aside className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto space-y-5 pb-2">
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search the handbook…"
+              className="w-full pl-9 pr-3 py-2.5 bg-inset border border-steel rounded-lg text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-amber transition-colors"
+            />
+          </div>
 
-      <div className="flex flex-wrap gap-1.5 mb-6">
-        {HANDBOOK_SECTIONS.map((s) => (
-          <a
-            key={s.id}
-            href={`#section-${s.id}`}
-            className="px-3 py-1.5 rounded-full text-xs font-semibold bg-inset border border-steel text-text-muted hover:text-amber hover:border-amber/40 transition-colors"
-          >
-            {s.title}
-          </a>
-        ))}
-        <a href="#glossary" className="px-3 py-1.5 rounded-full text-xs font-semibold bg-inset border border-steel text-text-muted hover:text-amber hover:border-amber/40 transition-colors">Glossary</a>
-        <a href="#iec-symbols" className="px-3 py-1.5 rounded-full text-xs font-semibold bg-inset border border-steel text-text-muted hover:text-amber hover:border-amber/40 transition-colors">IEC Symbols</a>
-        <a href="#faq" className="px-3 py-1.5 rounded-full text-xs font-semibold bg-inset border border-steel text-text-muted hover:text-amber hover:border-amber/40 transition-colors">FAQ</a>
-      </div>
+          {bookmarks.length > 0 && (
+            <NavGroup icon={Bookmark} label="Bookmarked">
+              {bookmarks.map((id) => {
+                const t = findTopicById(id)
+                if (!t) return null
+                return <NavLink key={id} href={`#${id}`} label={t.title} active={activeId === id} />
+              })}
+            </NavGroup>
+          )}
 
-      {search && filteredSections.length === 0 && (
-        <Card className="text-center py-8 text-text-dim text-sm mb-6">
-          No formulas match "{search}" — try a different term, or clear the search to browse everything.
-        </Card>
-      )}
+          {recent.length > 0 && (
+            <NavGroup icon={History} label="Recently Viewed">
+              {recent.map((id) => {
+                const t = findTopicById(id)
+                if (!t) return null
+                return <NavLink key={id} href={`#${id}`} label={t.title} active={activeId === id} />
+              })}
+            </NavGroup>
+          )}
 
-      <div className="space-y-8">
-        {filteredSections.map((section) => (
-          <section key={section.id} id={`section-${section.id}`} className="scroll-mt-24">
-            <h2 className="font-display text-lg text-amber font-semibold mb-3">{section.title}</h2>
-            <div className="space-y-2.5">
-              {section.topics.map((topic) => (
-                <HandbookEntry key={topic.id} topic={topic} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+          <nav aria-label="Handbook sections" className="space-y-0.5">
+            {HANDBOOK_SECTIONS.map((section) => (
+              <div key={section.id}>
+                <a
+                  href={`#section-${section.id}`}
+                  className={`block px-2.5 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wide transition-colors
+                    ${activeId === section.id ? 'text-amber' : 'text-text-dim hover:text-text-muted'}`}
+                >
+                  {section.title}
+                </a>
+                <div className="border-l border-steel ml-2.5 pl-2.5 space-y-0.5 mb-1.5">
+                  {section.topics.map((t) => (
+                    <NavLink key={t.id} href={`#${t.id}`} label={t.title} active={activeId === t.id} compact />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {STATIC_SECTIONS.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors
+                  ${activeId === s.id ? 'text-amber' : 'text-text-dim hover:text-text-muted'}`}
+              >
+                <s.icon size={12} /> {s.title}
+              </a>
+            ))}
+          </nav>
+        </aside>
 
-      {!search && (
-        <>
-          <section id="glossary" className="mt-10 scroll-mt-24">
-            <h2 className="font-display text-lg text-amber font-semibold mb-3 flex items-center gap-2">
-              <Tag size={18} /> Protection Device & Term Glossary
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-              {PROTECTION_GLOSSARY.map((g) => (
-                <Card key={g.term} padding="sm">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="font-mono text-sm text-copper font-semibold">{g.term}</span>
-                    {g.full !== '—' && <span className="text-[0.65rem] text-text-dim">{g.full}</span>}
+        {/* ── Main content ───────────────────────────────────────────── */}
+        <div className="min-w-0">
+          {!search && (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-8">
+              {HANDBOOK_SECTIONS.map((section) => (
+                <a
+                  key={section.id}
+                  href={`#section-${section.id}`}
+                  className="group flex items-center justify-between gap-2 bg-surface border border-steel rounded-lg px-4 py-3 hover:border-amber transition-colors"
+                >
+                  <div>
+                    <div className="text-text text-sm font-semibold">{section.title}</div>
+                    <div className="text-text-dim text-xs mt-0.5">{section.topics.length} topic{section.topics.length !== 1 ? 's' : ''}</div>
                   </div>
-                  <p className="text-xs text-text-muted leading-relaxed">{g.def}</p>
-                </Card>
+                  <ChevronRight size={15} className="text-text-dim group-hover:text-amber group-hover:translate-x-0.5 transition-all shrink-0" />
+                </a>
               ))}
             </div>
-          </section>
+          )}
 
-          <section id="iec-symbols" className="mt-10 scroll-mt-24">
-            <h2 className="font-display text-lg text-amber font-semibold mb-3">IEC Symbol Reference</h2>
-            <p className="text-text-dim text-xs mb-3">
-              General conventions per IEC 60617 — shape descriptions below, not pixel-precise renderings of the standard itself.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-              {IEC_SYMBOLS.map((sym) => (
-                <Card key={sym.id} padding="sm">
-                  <div className="text-sm font-semibold text-text mb-1">{sym.label}</div>
-                  <p className="text-xs text-text-muted leading-relaxed">{sym.desc}</p>
-                </Card>
-              ))}
-            </div>
-          </section>
+          {search && filteredSections.length === 0 && (
+            <Card className="text-center py-8 text-text-dim text-sm mb-6">
+              No formulas match "{search}" — try a different term, or clear the search to browse everything.
+            </Card>
+          )}
 
-          <section id="faq" className="mt-10 scroll-mt-24">
-            <h2 className="font-display text-lg text-amber font-semibold mb-3 flex items-center gap-2">
-              <HelpCircle size={18} /> Frequently Asked Questions
-            </h2>
-            <div className="space-y-2.5">
-              {FAQ.map((item, i) => (
-                <Card key={i} padding="md">
-                  <div className="text-sm font-semibold text-text mb-1.5">{item.q}</div>
-                  <p className="text-xs text-text-muted leading-relaxed">{item.a}</p>
-                </Card>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+          <div className="space-y-8">
+            {filteredSections.map((section) => (
+              <section key={section.id} id={`section-${section.id}`} className="scroll-mt-24">
+                <h2 className="font-display text-lg text-amber font-semibold mb-3">{section.title}</h2>
+                <div className="space-y-2.5">
+                  {section.topics.map((topic) => (
+                    <HandbookEntry key={topic.id} topic={topic} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+
+          {!search && (
+            <>
+              <section id="glossary" className="mt-10 scroll-mt-24">
+                <h2 className="font-display text-lg text-amber font-semibold mb-3 flex items-center gap-2">
+                  <Tag size={18} /> Protection Device & Term Glossary
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {PROTECTION_GLOSSARY.map((g) => (
+                    <Card key={g.term} padding="sm">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="font-mono text-sm text-copper font-semibold">{g.term}</span>
+                        {g.full !== '—' && <span className="text-[0.65rem] text-text-dim">{g.full}</span>}
+                      </div>
+                      <p className="text-xs text-text-muted leading-relaxed">{g.def}</p>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+
+              <section id="iec-symbols" className="mt-10 scroll-mt-24">
+                <h2 className="font-display text-lg text-amber font-semibold mb-3">IEC Symbol Reference</h2>
+                <p className="text-text-dim text-xs mb-3">
+                  General conventions per IEC 60617 — shape descriptions below, not pixel-precise renderings of the standard itself.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {IEC_SYMBOLS.map((sym) => (
+                    <Card key={sym.id} padding="sm">
+                      <div className="text-sm font-semibold text-text mb-1">{sym.label}</div>
+                      <p className="text-xs text-text-muted leading-relaxed">{sym.desc}</p>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+
+              <section id="faq" className="mt-10 scroll-mt-24">
+                <h2 className="font-display text-lg text-amber font-semibold mb-3 flex items-center gap-2">
+                  <HelpCircle size={18} /> Frequently Asked Questions
+                </h2>
+                <div className="space-y-2.5">
+                  {FAQ.map((item, i) => (
+                    <Card key={i} padding="md">
+                      <div className="text-sm font-semibold text-text mb-1.5">{item.q}</div>
+                      <p className="text-xs text-text-muted leading-relaxed">{item.a}</p>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </div>
+      </div>
     </div>
+  )
+}
+
+function NavGroup({ icon: Icon, label, children }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 px-2.5 text-[0.65rem] uppercase tracking-wide text-text-dim mb-1">
+        <Icon size={11} /> {label}
+      </div>
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  )
+}
+
+function NavLink({ href, label, active, compact }) {
+  return (
+    <a
+      href={href}
+      className={`block truncate rounded-md transition-colors
+        ${compact ? 'px-2.5 py-1 text-[0.78rem]' : 'px-2.5 py-1.5 text-xs font-medium'}
+        ${active ? 'text-amber bg-amber/5' : 'text-text-dim hover:text-text-muted'}`}
+    >
+      {label}
+    </a>
   )
 }

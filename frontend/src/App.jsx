@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect, useState, useCallback } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { ToastProvider } from './components/ui/Toast'
@@ -6,6 +6,10 @@ import Sidebar from './components/layout/Sidebar'
 import MobileHeader from './components/layout/MobileHeader'
 import WorkflowStepper from './components/layout/WorkflowStepper'
 import PageTransition from './components/layout/PageTransition'
+import Breadcrumb from './components/layout/Breadcrumb'
+import ProjectStatusBar from './components/layout/ProjectStatusBar'
+import ContextPanel from './components/layout/ContextPanel'
+import CommandPalette from './components/layout/CommandPalette'
 import { findNavItem } from './config/navigation'
 import { useUIStore } from './store/uiStore'
 
@@ -32,6 +36,14 @@ const PanelLayout = lazy(() => import('./pages/PanelLayout'))
 const FaultDiagnosis = lazy(() => import('./pages/FaultDiagnosis'))
 const ProjectReport = lazy(() => import('./pages/ProjectReport'))
 const EngineeringHandbook = lazy(() => import('./pages/EngineeringHandbook'))
+const ProjectDashboard = lazy(() => import('./pages/ProjectDashboard'))
+
+// Pages that manage their own full layout and opt out of the shared
+// breadcrumb / project-status-bar / context-panel workspace chrome: the
+// marketing home page, the handbook (its own two-column doc layout), the
+// print-focused report, and the dashboard (which *is* the project summary,
+// so wrapping it in another one would be redundant).
+const WORKSPACE_EXCLUDED = new Set(['/', '/handbook', '/report', '/dashboard'])
 
 function RouteFallback() {
   return (
@@ -61,6 +73,7 @@ function AnimatedRoutes() {
       <Suspense fallback={<RouteFallback />}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/dashboard" element={<PageTransition><ProjectDashboard /></PageTransition>} />
           <Route path="/cranes" element={<PageTransition><CraneSelector /></PageTransition>} />
           <Route path="/calculator" element={<PageTransition><LoadCalculator /></PageTransition>} />
           <Route path="/simulator" element={<PageTransition><PanelSimulator /></PageTransition>} />
@@ -83,13 +96,30 @@ function AnimatedRoutes() {
 function AppShell() {
   const location = useLocation()
   const isReport = location.pathname === '/report'
+  const isWorkspace = !WORKSPACE_EXCLUDED.has(location.pathname)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  const openSearch = useCallback(() => setSearchOpen(true), [])
+  const closeSearch = useCallback(() => setSearchOpen(false), [])
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setSearchOpen((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   return (
     <div className="min-h-screen lg:flex">
       <RecentTracker />
+      <CommandPalette open={searchOpen} onClose={closeSearch} />
       <div className="no-print">
-        <Sidebar />
-        <MobileHeader />
+        <Sidebar onOpenSearch={openSearch} />
+        <MobileHeader onOpenSearch={openSearch} />
       </div>
       <div className="flex-1 min-w-0">
         {!isReport && (
@@ -98,7 +128,18 @@ function AppShell() {
           </div>
         )}
         <div className={isReport ? '' : 'max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8'}>
-          <AnimatedRoutes />
+          {isWorkspace ? (
+            <>
+              <Breadcrumb path={location.pathname} />
+              <ProjectStatusBar />
+              <div className="grid xl:grid-cols-[1fr_300px] gap-6 items-start">
+                <div className="min-w-0"><AnimatedRoutes /></div>
+                <ContextPanel path={location.pathname} />
+              </div>
+            </>
+          ) : (
+            <AnimatedRoutes />
+          )}
         </div>
       </div>
     </div>

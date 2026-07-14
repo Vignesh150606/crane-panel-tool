@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Zap, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Zap, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react'
 import SidebarContent from './SidebarContent'
 import { useUIStore } from '../../store/uiStore'
 
 // Desktop-only persistent rail. Collapses to a 72px icon rail so the tool
 // stays navigable without permanently spending ~200px of a laptop screen —
 // the collapse preference is remembered (uiStore, persisted).
-export default function Sidebar() {
+export default function Sidebar({ onOpenSearch }) {
   const collapsed = useUIStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUIStore((s) => s.toggleSidebar)
 
@@ -29,6 +29,21 @@ export default function Sidebar() {
             </div>
           )}
         </Link>
+      </div>
+
+      <div className="p-2.5 border-b border-steel shrink-0">
+        <button
+          onClick={onOpenSearch}
+          title={collapsed ? 'Search (Ctrl K)' : undefined}
+          className={`w-full flex items-center gap-2 rounded-lg border border-steel bg-inset text-text-dim hover:text-text hover:border-steel-light transition-colors cursor-pointer text-sm
+            ${collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-2'}`}
+        >
+          <Search size={14} className="shrink-0" />
+          {!collapsed && <span className="flex-1 text-left">Search…</span>}
+          {!collapsed && (
+            <span className="text-[0.65rem] font-mono border border-steel rounded px-1 py-0.5 text-text-dim shrink-0">Ctrl K</span>
+          )}
+        </button>
       </div>
 
       <SidebarContent collapsed={collapsed} />

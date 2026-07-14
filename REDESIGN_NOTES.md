@@ -89,3 +89,113 @@ sensible build order rather than attempted shallowly:
 Bundle composition is essentially unchanged (route-level code-splitting was
 already in place and is untouched). New illustration is inline SVG (no image
 asset added). Sidebar/uiStore add ~2KB uncompressed. No new runtime deps.
+
+---
+
+# Phase 2 — Connected Workspace
+
+Builds directly on Phase 1 — sidebar, wide layout, and homepage are
+untouched and kept exactly as they were. This phase's brief (global layout
+hierarchy, per-page redesign, handbook overhaul, global search, context
+panel, project dashboard, cross-linking, industrial chrome, full consistency
+pass) is again more than one pass can respectably finish, so the same
+approach as Phase 1 applies: take the structural items all the way to a
+real, tested state; name what's deferred instead of half-doing it.
+
+## What shipped this phase
+
+**1. Global workspace chrome — applied to all 12 pages from one place**
+Rather than editing each of the 7 workflow + 5 reference pages individually
+(high risk of breaking their existing, already-audited engineering logic),
+the breadcrumb / project-status-bar / context-panel layer was added once in
+`App.jsx`, keyed off the route. Every workflow/reference page picked it up
+automatically with **zero changes to the page files themselves** — their
+calculations, state, and existing `PageHeader` usage are exactly as they
+were before this phase. Home, Handbook, Report and Dashboard opt out (each
+has its own layout reason, documented in `App.jsx`).
+
+- `Breadcrumb.jsx` — Home / section / page.
+- `ProjectStatusBar.jsx` — project name, selected crane, a bank of 5 status
+  LEDs (crane/load/cable/circuit/bom, from `projectStore.completedSteps()`),
+  live completion %, and a title-block-style REV A / date stamp.
+- `ContextPanel.jsx` — right-hand column (stacks below on <xl) showing up to
+  2 related handbook topics (equation, one-line meaning, first common
+  mistake, interview tip, deep link) plus a "Next Recommended Step" card.
+  **All of this content is pulled from `handbookContent.js`, which already
+  existed and was already engineering-audited — nothing new was invented.**
+  9 of 13 pages had this tagging built in already (`relatedCalculator`); the
+  other 4 (BOM, Nameplate, Power Circuit, Simulator, Fault Diagnosis) got a
+  small supplementary map in `workspaceIndex.js` pointing at the same
+  existing topics, since the concepts clearly apply there too but weren't
+  wired up.
+
+**2. Project Dashboard** — new page, `/dashboard`
+Live crane/motor/cable/BOM summary, a completion ring, an incomplete-
+sections warning list, and a reset-project action. Every field is read
+directly from `projectStore` / `craneData.js` (the same source
+`ProjectReport.jsx` already used) — no new project fields were invented to
+fill it out.
+
+**3. Global search** — Ctrl/Cmd+K command palette
+Searches pages, all 27 handbook formulas, the protection-device glossary,
+and IEC symbol reference from one box, with keyboard navigation. Index is
+built once from existing data (`workspaceIndex.js`) — no separate content
+written for search.
+
+**4. Handbook rebuilt as a real doc layout**
+Sticky left nav (scrollspy-highlighted section + topic tree) replaces the
+old horizontal pill row; "Browse by Topic" category cards up top; Bookmarks
+and Recently Viewed sections (new `handbookStore.js`, same persisted-store
+pattern as the rest of the app) that populate as you use it.
+`HandbookEntry.jsx` got a bookmark toggle added to its header — its
+accordion behavior and all its content rendering are untouched.
+
+**5. Verified, not assumed**
+Full rebuild + a route-by-route sweep (all 15 routes, desktop 1680px +
+mobile 390px): zero console/page errors, zero horizontal overflow. Also
+specifically checked: the context panel's grid collapses from a right column
+to full-width-stacked below the `xl` breakpoint (measured via bounding
+boxes, not just visually assumed); the sidebar stays `sticky` through a
+2000px scroll on the longest page (Handbook); bookmark → recently-viewed →
+search all interact correctly end to end.
+
+## Deferred — not started this phase
+
+- **Load Calculator split-layout rebuild** (brief section 3). The current
+  5-step wizard already avoids "wall of stacked cards" via progressive
+  disclosure, and reworking its interaction model risks the verified
+  calculation logic in a 24KB file that's had a full engineering audit pass.
+  This deserves a dedicated, focused pass rather than being squeezed in
+  alongside 4 other major features — flagging rather than rushing it.
+- **Per-page bespoke redesign** of the 7 workflow pages' internal layout
+  (their own card structure, spacing, tables). What shipped wraps them
+  uniformly from outside; their interiors are unchanged.
+- **Industrial Panel Explorer, Challenge Mode, expanded export system,
+  light mode** — still not started, carried over from Phase 1.
+- **Wire tags / terminal tags / panel tags** inside Panel Layout and Control
+  Circuit specifically (brief section 11) — the status bar covers the
+  project-metadata half of "industrial feel"; the panel/wire-label half
+  would mean editing those two pages' internals directly.
+- Full line-by-line UI consistency audit (typography scale, table styles,
+  chart styling) across all 12 pages — the shared chrome addresses this at
+  the structural level; a detailed pass page-by-page is still open.
+- Persona-based release review — meaningful once the deferred items above
+  exist.
+
+## Files touched
+`App.jsx` (workspace chrome + dashboard route + command palette wiring),
+`Home.jsx` (dashboard cross-link, hero-glow overflow fix),
+`EngineeringHandbook.jsx` (full rebuild), `HandbookEntry.jsx` (bookmark
+toggle added), `Card.jsx` (added a `warning` variant) — modified.
+`ProjectDashboard.jsx`, `Breadcrumb.jsx`, `ProjectStatusBar.jsx`,
+`ContextPanel.jsx`, `CommandPalette.jsx`, `data/workspaceIndex.js`,
+`store/handbookStore.js` — new. `Sidebar.jsx` / `MobileHeader.jsx` /
+`SidebarContent.jsx` / `config/navigation.js` — extended (search trigger,
+Dashboard entry) without changing Phase 1's structure.
+
+## Performance impact (Phase 2 delta)
+Handbook chunk grew ~9KB → 14.6KB (scrollspy + nav tree + bookmark store).
+New Dashboard chunk: 6.1KB. Command palette + workspace chrome: ~4KB
+combined, loaded in the main bundle since they're global (not route-split).
+All still gzip well under 5KB per chunk; no new runtime dependencies.
+
