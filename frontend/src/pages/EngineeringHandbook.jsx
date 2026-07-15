@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
-import { BookOpen, Search, HelpCircle, Tag, Bookmark, History, ChevronRight } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { BookOpen, Search, HelpCircle, Tag, Bookmark, History, ChevronRight, LayoutPanelTop, Gamepad2, ClipboardCheck } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import HandbookEntry from '../components/ui/HandbookEntry'
@@ -104,6 +104,13 @@ export default function EngineeringHandbook() {
         title="Engineering Handbook"
         description="Every formula and control-circuit concept used anywhere in this app, in one place — equation, variables, a worked example, and where it's actually used."
       />
+
+      <div className="flex items-center gap-4 flex-wrap bg-inset border border-steel rounded-lg px-4 py-3 mb-6 text-xs">
+        <span className="text-text-muted font-semibold shrink-0">Put it into practice:</span>
+        <Link to="/panel-explorer" className="flex items-center gap-1.5 text-amber hover:text-amber-dim transition-colors"><LayoutPanelTop size={13} /> Panel Explorer</Link>
+        <Link to="/challenge-mode" className="flex items-center gap-1.5 text-amber hover:text-amber-dim transition-colors"><Gamepad2 size={13} /> Challenge Mode</Link>
+        <Link to="/commissioning" className="flex items-center gap-1.5 text-amber hover:text-amber-dim transition-colors"><ClipboardCheck size={13} /> Virtual Commissioning</Link>
+      </div>
 
       <div className="grid lg:grid-cols-[260px_1fr] gap-8 items-start">
         {/* ── Sticky left navigation ─────────────────────────────────── */}

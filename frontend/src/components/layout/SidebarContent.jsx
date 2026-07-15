@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Check, HelpCircle, ArrowRight, History } from 'lucide-react'
-import { HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, WORKFLOW_ITEMS, REFERENCE_ITEMS, findNavItem } from '../../config/navigation'
+import { HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS, findNavItem } from '../../config/navigation'
 import { useProjectStore } from '../../store/projectStore'
 import { useUIStore } from '../../store/uiStore'
 
@@ -94,6 +94,11 @@ export default function SidebarContent({ collapsed = false, onNavigate }) {
       <SectionLabel collapsed={collapsed}>Reference Tools</SectionLabel>
       {REFERENCE_ITEMS.map((item) => (
         <Row key={item.path} to={item.path} icon={item.icon} label={item.label} active={isActive(item.path)} collapsed={collapsed} onNavigate={onNavigate} />
+      ))}
+
+      <SectionLabel collapsed={collapsed}>Training Modules</SectionLabel>
+      {TRAINING_ITEMS.map((item) => (
+        <Row key={item.path} to={item.path} icon={item.icon} label={item.label} active={isActive(item.path)} collapsed={collapsed} onNavigate={onNavigate} badge={item.isNew ? 'New' : undefined} />
       ))}
 
       {!collapsed && (

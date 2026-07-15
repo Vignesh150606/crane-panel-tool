@@ -7,7 +7,10 @@ import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import Badge from '../components/ui/Badge'
 import { useProjectStore } from '../store/projectStore'
+import { useTrainingStore, trainingSummary } from '../store/trainingStore'
 import { CRANE_TYPES } from '../data/craneData'
+import { PANEL_COMPONENTS } from '../data/panelComponents'
+import { FAULTS } from '../data/faultLibrary'
 
 const TODAY = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -15,6 +18,8 @@ export default function ProjectReport() {
   const store = useProjectStore()
   const { project, craneType, motors, cableBusbar, starDelta, bom } = store
   const [editing, setEditing] = useState(!project.name)
+  const training = trainingSummary(useTrainingStore())
+  const hasTrainingActivity = training.componentsViewed > 0 || training.challengesSolved > 0 || training.lastCommissioningScore !== null
 
   const crane = craneType ? CRANE_TYPES[craneType] : null
 
@@ -166,6 +171,17 @@ export default function ProjectReport() {
               <NotYetAvailable link="/bom" label="Generate the BOM" />
             )}
           </Section>
+
+          {/* Training readiness — only shown if the training platform was actually used; not a workflow step. */}
+          {hasTrainingActivity && (
+            <Section title="Training Readiness">
+              <InfoGrid items={[
+                { label: 'Panel Components Explored', value: `${training.componentsViewed} / ${PANEL_COMPONENTS.length}` },
+                { label: 'Fault Scenarios Solved', value: `${training.challengesSolved} / ${FAULTS.length}` },
+                { label: 'Last Commissioning Score', value: training.lastCommissioningScore !== null ? `${training.lastCommissioningScore} / ${training.lastCommissioningMax}` : 'Not attempted' },
+              ]} />
+            </Section>
+          )}
 
           {/* Engineering notes */}
           <Section title="Engineering Notes">

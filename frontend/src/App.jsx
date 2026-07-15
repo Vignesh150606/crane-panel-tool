@@ -37,6 +37,9 @@ const FaultDiagnosis = lazy(() => import('./pages/FaultDiagnosis'))
 const ProjectReport = lazy(() => import('./pages/ProjectReport'))
 const EngineeringHandbook = lazy(() => import('./pages/EngineeringHandbook'))
 const ProjectDashboard = lazy(() => import('./pages/ProjectDashboard'))
+const PanelExplorer = lazy(() => import('./pages/PanelExplorer'))
+const ChallengeMode = lazy(() => import('./pages/ChallengeMode'))
+const VirtualCommissioning = lazy(() => import('./pages/VirtualCommissioning'))
 
 // Pages that manage their own full layout and opt out of the shared
 // breadcrumb / project-status-bar / context-panel workspace chrome: the
@@ -87,6 +90,9 @@ function AnimatedRoutes() {
           <Route path="/fault-diagnosis" element={<PageTransition><FaultDiagnosis /></PageTransition>} />
           <Route path="/report" element={<PageTransition><ProjectReport /></PageTransition>} />
           <Route path="/handbook" element={<PageTransition><EngineeringHandbook /></PageTransition>} />
+          <Route path="/panel-explorer" element={<PageTransition><PanelExplorer /></PageTransition>} />
+          <Route path="/challenge-mode" element={<PageTransition><ChallengeMode /></PageTransition>} />
+          <Route path="/commissioning" element={<PageTransition><VirtualCommissioning /></PageTransition>} />
         </Routes>
       </Suspense>
     </AnimatePresence>

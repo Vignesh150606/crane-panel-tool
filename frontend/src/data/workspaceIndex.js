@@ -5,7 +5,7 @@
 // wired up yet: which handbook topics show up on which working page, and
 // a single flat index to search all of it from one box.
 import { HANDBOOK_SECTIONS, PROTECTION_GLOSSARY, IEC_SYMBOLS } from '../data/handbookContent'
-import { ALL_NAV_ITEMS, WORKFLOW_ITEMS, REFERENCE_ITEMS } from '../config/navigation'
+import { ALL_NAV_ITEMS, WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS } from '../config/navigation'
 
 // Flatten every topic once, up front.
 const ALL_TOPICS = HANDBOOK_SECTIONS.flatMap((section) =>
@@ -25,6 +25,9 @@ const SUPPLEMENTARY_LINKS = {
   '/simulator': ['no-nc-contacts', 'seal-in-circuits', 'forward-reverse-interlock'],
   '/fault-diagnosis': ['overload-relay', 'no-nc-contacts'],
   '/panel-layout': ['contactor-sizing', 'mpcb-sizing'],
+  '/panel-explorer': ['contactor-sizing', 'mpcb-sizing', 'overload-relay', 'no-nc-contacts'],
+  '/challenge-mode': ['forward-reverse-interlock', 'no-nc-contacts', 'overload-relay'],
+  '/commissioning': ['forward-reverse-interlock', 'no-nc-contacts'],
 }
 
 /** Handbook topics relevant to a given page path, tagged relationship first. */
@@ -48,6 +51,7 @@ export function getNextWorkflowStep(path) {
 export function getSectionForPath(path) {
   if (WORKFLOW_ITEMS.some((w) => w.path === path)) return { label: 'Design Workflow', path: '/' }
   if (REFERENCE_ITEMS.some((r) => r.path === path)) return { label: 'Reference Tools', path: '/' }
+  if (TRAINING_ITEMS.some((t) => t.path === path)) return { label: 'Training Modules', path: '/' }
   return null
 }
 

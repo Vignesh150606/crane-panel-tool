@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Zap, Play, Square, X, Ruler } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Zap, Play, Square, X, Ruler, LayoutPanelTop, Gamepad2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -69,6 +70,12 @@ export default function PowerCircuit() {
         icon={Zap}
         title="Power Circuit Visualizer"
         description="Visualize the complete power circuit from 3-phase supply to motors. Click any component for details."
+        actions={
+          <>
+            <Button as={Link} to="/panel-explorer" variant="outline" size="sm" icon={LayoutPanelTop}>Explore the physical panel</Button>
+            <Button as={Link} to="/challenge-mode" variant="outline" size="sm" icon={Gamepad2}>Diagnose faults</Button>
+          </>
+        }
       />
 
       <div className="flex gap-2 mb-5 flex-wrap">

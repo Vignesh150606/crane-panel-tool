@@ -7,7 +7,7 @@
 import {
   Home as HomeIcon, Factory, Calculator, Cable, CircuitBoard, LayoutGrid,
   ClipboardList, FileText, Tag, Triangle, Zap, Gamepad2, Search, BookOpen,
-  LayoutDashboard,
+  LayoutDashboard, LayoutPanelTop, ClipboardCheck,
 } from 'lucide-react'
 
 export const HOME_ITEM = { path: '/', label: 'Home', icon: HomeIcon }
@@ -62,7 +62,21 @@ export const REFERENCE_ITEMS = [
     description: 'Common crane panel faults — reveal cause, diagnosis logic and fix step by step.' },
 ]
 
-export const ALL_NAV_ITEMS = [HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS]
+// The Industrial Crane Controls Training Platform — Version 2's three new
+// modules. Not part of the numbered workflow (they're practice/reference,
+// not design steps that produce project data) but distinct enough from the
+// standalone calculators in REFERENCE_ITEMS to get their own sidebar
+// section, same treatment the Handbook got when it shipped.
+export const TRAINING_ITEMS = [
+  { path: '/panel-explorer', label: 'Panel Explorer', icon: LayoutPanelTop,
+    description: 'Click any component on a realistic panel — function, ratings, failure symptoms, maintenance tips and interview questions.', isNew: true },
+  { path: '/challenge-mode', label: 'Challenge Mode', icon: Gamepad2,
+    description: 'Diagnose real fault scenarios on a live, fault-injected circuit or with field measurements — hints and wrong attempts cost points.', isNew: true },
+  { path: '/commissioning', label: 'Virtual Commissioning', icon: ClipboardCheck,
+    description: '13-step commissioning checklist, in order. Some checks include a wrong reading you have to catch, not rubber-stamp.', isNew: true },
+]
+
+export const ALL_NAV_ITEMS = [HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS, ...TRAINING_ITEMS]
 
 export function findNavItem(path) {
   return ALL_NAV_ITEMS.find((i) => i.path === path) || null

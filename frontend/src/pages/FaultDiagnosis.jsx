@@ -1,63 +1,13 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, AlertTriangle, ScanSearch, Settings2, Wrench, Lightbulb } from 'lucide-react'
+import { Search, AlertTriangle, ScanSearch, Settings2, Wrench, Lightbulb, Gamepad2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
-
-const FAULTS = [
-  {
-    id: 'phase_loss',
-    title: 'Single Phasing',
-    symptoms: ["Motor hums but doesn't rotate", 'SPP trips immediately', 'Increased current on remaining phases'],
-    cause: 'One of the three supply phases (R/Y/B) has lost continuity — blown fuse, loose connection, or cable damage.',
-    diagnosis: 'SPP (Single Phase Preventer) detects the imbalance and opens its output contact, de-energizing the main contactor coil.',
-    fix: 'Check incoming supply at MCB terminals with a multimeter on each phase. Identify the missing phase, check the upstream fuse/breaker and cable continuity.',
-    component: 'SPP',
-    interviewTip: "Why can't the motor's own overload relay always catch this fast enough on its own? Total current can look close to normal while the two remaining phases each carry roughly double the per-phase load — a thermal element watching total current doesn't see that imbalance directly, which is exactly why a dedicated phase-loss device exists instead of relying on the overload relay alone.",
-  },
-  {
-    id: 'overload_trip',
-    title: 'Overload Relay Trip',
-    symptoms: ['Motor stops suddenly during operation', 'Overload relay trip flag visible', 'Motor casing hot to touch'],
-    cause: 'Motor drawing current above the overload relay setting for an extended period — mechanical jam, excessive load, or voltage imbalance.',
-    diagnosis: 'Thermal overload relay bimetallic strip heats up and trips its NC contact in the contactor coil circuit, de-energizing the contactor.',
-    fix: 'Check for mechanical obstruction on crane motion. Verify overload setting matches motor FLC (should be ~105% of FLC). Allow cooldown before reset.',
-    component: 'Overload Relay',
-    interviewTip: 'A candidate who immediately resets and re-runs the motor without checking for a mechanical jam first hasn\'t actually fixed anything — the relay tripped for a reason, and resetting clears the symptom, not the cause. This is the fault most likely to repeat within minutes if skipped.',
-  },
-  {
-    id: 'limit_stuck',
-    title: 'Limit Switch Stuck (Open)',
-    symptoms: ["One direction of motion doesn't work", 'Opposite direction works fine', 'No fault indication on panel'],
-    cause: 'Limit switch roller mechanically stuck in pressed position, or wiring to limit switch broken (open circuit on NC contact).',
-    diagnosis: 'The stuck-open NC contact permanently breaks the relay coil circuit for that direction, so the relay never energizes regardless of push button.',
-    fix: 'Inspect limit switch roller for mechanical binding/debris. Check continuity of NC contact with a multimeter — should read 0Ω when not triggered.',
-    component: 'Limit Switch',
-    interviewTip: '"No fault indication on panel" is the diagnostic giveaway here — electrically, a stuck-open limit switch looks identical to nobody pressing the button at all. Symptom #2 (the opposite direction still works fine) is what actually separates this from "the push button itself is broken."',
-  },
-  {
-    id: 'contactor_chatter',
-    title: 'Contactor Chattering',
-    symptoms: ['Buzzing/chattering sound from contactor', 'Motor starts and stops rapidly', 'Visible arcing at contacts'],
-    cause: 'Low control voltage (110V coil supply dropping), worn contactor coil, or loose connection to coil terminal A1/A2.',
-    diagnosis: 'Insufficient holding force on the contactor armature causes it to partially release and re-energize repeatedly — a chattering cycle.',
-    fix: 'Measure voltage at contactor coil terminals during operation. Check control transformer secondary voltage (should be 110V ±5%). Tighten coil terminal connections.',
-    component: 'Contactor',
-    interviewTip: 'If chattering only happens under load (not at rest), suspect the control transformer secondary sagging under load rather than the contactor coil itself — check what else shares that 110V rail, since a marginal transformer can be "just adequate" until something else draws current on the same secondary at the same moment.',
-  },
-  {
-    id: 'both_directions',
-    title: 'Both Directions Active (Interlock Failure)',
-    symptoms: ['Both Forward and Reverse contactors energize together', 'Tripping of main MCB or fuse blow', 'Possible motor winding damage'],
-    cause: 'NC interlock contact wiring missing, miswired as NO, or relay contact welded closed due to a previous overload.',
-    diagnosis: 'Without a proper interlock, both directional contactors can close simultaneously, creating a phase-to-phase short circuit through the motor.',
-    fix: 'CRITICAL — de-energize immediately. Verify NC contact wiring between the relay pair (e.g. R1-R2). Check for welded/stuck relay contacts and replace if found.',
-    component: 'Interlock Relay',
-    interviewTip: "This is the fault almost every crane-panel interview eventually asks about — it's the one failure mode here that can destroy a motor and panel in under a second, not minutes. See the Control Circuit page's explanation of why swapping two phases (not three) is what makes this specific failure a direct phase-to-phase short, not just a wiring inconvenience.",
-  },
-]
+import { FAULTS } from '../data/faultLibrary'
 
 const DIAGNOSTIC_METHOD_EXPLANATION = {
   formula: 'Localize before you replace: test at the boundary between "working" and "not working," not at the component you first suspect.',
@@ -89,6 +39,7 @@ export default function FaultDiagnosis() {
         icon={Search}
         title="Fault Diagnosis Simulator"
         description="Common crane panel faults. Click a fault to see symptoms, then reveal the cause, diagnosis logic, and fix one step at a time."
+        actions={<Button as={Link} to="/challenge-mode" variant="outline" size="sm" icon={Gamepad2}>Try it live in Challenge Mode</Button>}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">

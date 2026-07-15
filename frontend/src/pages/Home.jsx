@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2, LayoutDashboard } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
-import { WORKFLOW_ITEMS, REFERENCE_ITEMS, HANDBOOK_ITEM } from '../config/navigation'
+import { WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS, HANDBOOK_ITEM } from '../config/navigation'
 import PanelSchematic from '../components/illustrations/PanelSchematic'
 
 const CAPABILITIES = [
@@ -106,6 +106,19 @@ export default function Home() {
             <FeatureCard key={f.path} feature={f} delay={i * 0.03} />
           ))}
           <FeatureCard feature={{ ...HANDBOOK_ITEM, isHandbook: true }} delay={REFERENCE_ITEMS.length * 0.03} />
+        </div>
+      </section>
+
+      {/* ── Training Modules ─────────────────────────────────────────── */}
+      <section className="pt-10 pb-4">
+        <div className="mb-5">
+          <h2 className="font-display text-xl font-semibold text-text mb-1">Industrial Training Platform</h2>
+          <p className="text-text-dim text-sm">Practice on a realistic panel, diagnose live faults, and run a full commissioning checklist.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {TRAINING_ITEMS.map((f, i) => (
+            <FeatureCard key={f.path} feature={f} delay={i * 0.03} />
+          ))}
         </div>
       </section>
 

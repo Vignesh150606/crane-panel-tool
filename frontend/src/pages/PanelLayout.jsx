@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { LayoutGrid, ClipboardList } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { LayoutGrid, ClipboardList, LayoutPanelTop } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 
 const COMPONENTS = [
@@ -43,6 +45,7 @@ export default function PanelLayout() {
         icon={LayoutGrid}
         title="Panel Layout Visualizer"
         description="2D component placement following DIN rail mounting standards from real panel assembly."
+        actions={<Button as={Link} to="/panel-explorer" variant="outline" size="sm" icon={LayoutPanelTop}>Explore each component in depth</Button>}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5">

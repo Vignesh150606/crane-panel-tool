@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CircuitBoard, Lightbulb, Palette, AlertOctagon, RotateCcw, BookOpen } from 'lucide-react'
+import { CircuitBoard, Lightbulb, Palette, AlertOctagon, RotateCcw, BookOpen, Gamepad2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Toggle from '../components/ui/Toggle'
 import Button from '../components/ui/Button'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
+import { computeNextActive } from '../lib/relayLogic'
 
 const MOTIONS = {
   LT: { label: 'Long Travel', fwd: 'FORWARD', rev: 'REVERSE', relayFwd: 'R1', relayRev: 'R2' },
@@ -94,23 +95,12 @@ export default function ControlCircuit() {
   const m = MOTIONS[motion]
   const controlPowerOk = !supplyLost && !eStop && !overloadTripped
 
-  // Pure transition function — given the NEXT value of whichever input just
-  // changed (plus everything else as it currently stands), decides which
-  // direction should hold the interlock claim. Called directly from each
-  // event handler below (not from an effect), so there's exactly one state
-  // update per user action instead of a derived render-then-effect cascade.
-  const computeNextActive = (next, prev) => {
-    const powerOk = !next.supplyLost && !next.eStop && !next.overload
-    const fwdWantsRun = powerOk && next.pbFwd && !next.limitFwd
-    const revWantsRun = powerOk && next.pbRev && !next.limitRev
-    if (prev === 'FWD') return fwdWantsRun ? 'FWD' : (revWantsRun ? 'REV' : null)
-    if (prev === 'REV') return revWantsRun ? 'REV' : (fwdWantsRun ? 'FWD' : null)
-    if (fwdWantsRun && revWantsRun) return 'FWD' // simultaneous claim: deterministic tie-break for the UI
-    if (fwdWantsRun) return 'FWD'
-    if (revWantsRun) return 'REV'
-    return null
-  }
-
+  // Interlock decision logic itself now lives in lib/relayLogic.js — called
+  // directly from each event handler below (not from an effect), so there's
+  // exactly one state update per user action instead of a derived
+  // render-then-effect cascade. Shared with Challenge Mode / Virtual
+  // Commissioning so a "diagnose the fault" scenario tests this exact
+  // behavior, not a re-derived stand-in for it.
   const snapshot = (overrides = {}) => ({ pbFwd, pbRev, limitFwd, limitRev, eStop, overload: overloadTripped, supplyLost, ...overrides })
   const applyTransition = (overrides) => setActiveDir((prev) => computeNextActive(snapshot(overrides), prev))
 
@@ -162,7 +152,12 @@ export default function ControlCircuit() {
         icon={CircuitBoard}
         title="Control Circuit Visualizer"
         description="Real relay interlock circuit from an EOT crane panel. Press push buttons to see relay energization and NO/NC contact states in real time."
-        actions={<Button as={Link} to="/handbook#forward-reverse-interlock" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>}
+        actions={
+          <>
+            <Button as={Link} to="/handbook#forward-reverse-interlock" variant="outline" size="sm" icon={BookOpen}>Learn the theory</Button>
+            <Button as={Link} to="/challenge-mode" variant="outline" size="sm" icon={Gamepad2}>Diagnose faults</Button>
+          </>
+        }
       />
 
       <div className="flex gap-2 mb-5 flex-wrap">

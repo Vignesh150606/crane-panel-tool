@@ -3,13 +3,17 @@ import { motion } from 'framer-motion'
 import {
   LayoutDashboard, RotateCcw, ArrowRight, AlertTriangle,
   FileText, Factory, Zap, Cable as CableIcon, ClipboardList, Compass, ShieldAlert,
+  LayoutPanelTop, Gamepad2, ClipboardCheck, GraduationCap,
 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import { useProjectStore } from '../store/projectStore'
+import { useTrainingStore, trainingSummary } from '../store/trainingStore'
 import { CRANE_TYPES } from '../data/craneData'
 import { WORKFLOW_ITEMS } from '../config/navigation'
+import { PANEL_COMPONENTS } from '../data/panelComponents'
+import { FAULTS } from '../data/faultLibrary'
 
 const MOTOR_LABEL = { hoist: 'Hoist', lt: 'Long Travel', ct: 'Cross Travel' }
 const COMPONENT_LABEL = { contactor: 'contactor', mpcb: 'MPCB', cable: 'cable' }
@@ -54,6 +58,7 @@ export default function ProjectDashboard() {
   const { project, craneType, motors, cableBusbar, starDelta, bom, resetProject } = store
   const steps = store.completedSteps()
   const crane = craneType ? CRANE_TYPES[craneType] : null
+  const training = trainingSummary(useTrainingStore())
 
   const doneCount = Object.values(steps).filter(Boolean).length
   const totalCount = Object.keys(steps).length
@@ -219,6 +224,42 @@ export default function ProjectDashboard() {
             ]} />
           )}
         </SummaryCard>
+      </div>
+
+      {/* Training platform progress — separate from the design workflow
+          above on purpose: practice/reference activity, not project data. */}
+      <div className="mt-6">
+        <div className="flex items-center gap-1.5 text-text-muted text-xs font-semibold uppercase tracking-wide mb-3">
+          <GraduationCap size={13} /> Training Progress
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card>
+            <div className="flex items-center gap-2 mb-2">
+              <LayoutPanelTop size={14} className="text-amber" />
+              <span className="text-text font-semibold text-sm flex-1">Panel Explorer</span>
+            </div>
+            <div className="text-2xl font-display font-bold text-text mb-2">{training.componentsViewed}<span className="text-text-dim text-sm font-normal">/{PANEL_COMPONENTS.length}</span></div>
+            <Link to="/panel-explorer" className="text-xs font-semibold text-amber inline-flex items-center gap-1">Explore components <ArrowRight size={11} /></Link>
+          </Card>
+          <Card>
+            <div className="flex items-center gap-2 mb-2">
+              <Gamepad2 size={14} className="text-amber" />
+              <span className="text-text font-semibold text-sm flex-1">Challenge Mode</span>
+            </div>
+            <div className="text-2xl font-display font-bold text-text mb-2">{training.challengesSolved}<span className="text-text-dim text-sm font-normal">/{FAULTS.length} solved</span></div>
+            <Link to="/challenge-mode" className="text-xs font-semibold text-amber inline-flex items-center gap-1">Diagnose a fault <ArrowRight size={11} /></Link>
+          </Card>
+          <Card>
+            <div className="flex items-center gap-2 mb-2">
+              <ClipboardCheck size={14} className="text-amber" />
+              <span className="text-text font-semibold text-sm flex-1">Commissioning</span>
+            </div>
+            <div className="text-2xl font-display font-bold text-text mb-2">
+              {training.lastCommissioningScore !== null ? `${training.lastCommissioningScore}/${training.lastCommissioningMax}` : '—'}
+            </div>
+            <Link to="/commissioning" className="text-xs font-semibold text-amber inline-flex items-center gap-1">{training.lastCommissioningScore !== null ? 'Run again' : 'Start a run'} <ArrowRight size={11} /></Link>
+          </Card>
+        </div>
       </div>
     </div>
   )
