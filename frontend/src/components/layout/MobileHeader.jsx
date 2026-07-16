@@ -10,7 +10,11 @@ export default function MobileHeader({ onOpenSearch }) {
 
   // Close the drawer automatically on route change (covers back/forward nav
   // too, not just link clicks inside the drawer).
-  useEffect(() => { setOpen(false) }, [location.pathname])
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname)
+    setOpen(false)
+  }
 
   // Lock background scroll while the drawer is open.
   useEffect(() => {

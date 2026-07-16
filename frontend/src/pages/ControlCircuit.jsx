@@ -7,6 +7,7 @@ import Toggle from '../components/ui/Toggle'
 import Button from '../components/ui/Button'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import { computeNextActive } from '../lib/relayLogic'
+import { usePublishTutorContext } from '../tutor/useTutorPageContext'
 
 const MOTIONS = {
   LT: { label: 'Long Travel', fwd: 'FORWARD', rev: 'REVERSE', relayFwd: 'R1', relayRev: 'R2' },
@@ -145,6 +146,16 @@ export default function ControlCircuit() {
   // in use.
   const wire = (energized) => (controlPowerOk && energized) ? 'var(--color-safe)' : 'var(--color-steel)'
   const wireClass = (energized) => (controlPowerOk && energized) ? 'wire-flow' : ''
+
+  usePublishTutorContext('simulation', [
+    `Motion: ${m.label} (${motion}).`,
+    `${m.fwd} pushbutton ${pbFwd ? 'held' : 'released'}, ${m.rev} pushbutton ${pbRev ? 'held' : 'released'}.`,
+    `${m.fwd} limit switch ${limitFwd ? 'TRIPPED' : 'clear'}, ${m.rev} limit switch ${limitRev ? 'TRIPPED' : 'clear'}.`,
+    `E-Stop ${eStop ? 'ENGAGED' : 'clear'}, overload relay ${overloadTripped ? 'TRIPPED' : 'clear'}, supply ${supplyLost ? 'LOST' : 'OK'}.`,
+    relayFwdEnergized ? `Relay ${m.relayFwd} (${m.fwd}) is energized.`
+      : relayRevEnergized ? `Relay ${m.relayRev} (${m.rev}) is energized.`
+      : 'No relay is currently energized.',
+  ].join(' '))
 
   return (
     <div>

@@ -13,6 +13,7 @@ import MiniControlCircuit from '../components/training/MiniControlCircuit'
 import InspectionPanel from '../components/training/InspectionPanel'
 import { FAULTS, DIFFICULTIES } from '../data/faultLibrary'
 import { useTrainingStore } from '../store/trainingStore'
+import { usePublishTutorContext } from '../tutor/useTutorPageContext'
 
 const DIFFICULTY_TONE = { beginner: 'safe', intermediate: 'caution', advanced: 'danger' }
 const HINT_PENALTY = 15
@@ -125,6 +126,16 @@ function ScenarioWorkspace({ fault, onExit, onRecordResult }) {
 
   const tryAgain = () => { setOutcome(null); setSelectedOption(null) }
 
+  usePublishTutorContext('challenge', [
+    `Diagnosing fault scenario "${fault.title}" (${fault.difficulty} difficulty).`,
+    `Symptoms given to the student: ${fault.symptoms.join('; ')}.`,
+    `Actual cause (for hint calibration only — do not state outright unless asked or after repeated wrong attempts): ${fault.cause}`,
+    `Hints used so far: ${hintsShown}. Wrong attempts: ${wrongAttempts}.`,
+    outcome === 'correct' ? 'Student just diagnosed this correctly.'
+      : outcome === 'wrong' ? 'Student just submitted an incorrect diagnosis and is trying again.'
+      : 'Student has not yet submitted a diagnosis.',
+  ].join(' '), { id: fault.id, title: fault.title })
+
   return (
     <div>
       <PageHeader
@@ -148,7 +159,7 @@ function ScenarioWorkspace({ fault, onExit, onRecordResult }) {
             <Card padding="lg" className="overflow-x-auto">
               <h3 className="font-display text-amber font-semibold mb-3 text-sm">Live Circuit — {fault.simConfig.motionLabel}</h3>
               <MiniControlCircuit
-                motionLabel={fault.simConfig.motionLabel} fwdLabel={fault.simConfig.fwdLabel} revLabel={fault.simConfig.revLabel}
+                fwdLabel={fault.simConfig.fwdLabel} revLabel={fault.simConfig.revLabel}
                 showMasterControls={fault.simConfig.showMasterControls} showLimitControls={fault.simConfig.showLimitControls}
                 faults={fault.simConfig.faults}
                 pbFwd={pbFwd} pbRev={pbRev} onPbFwd={setPbFwd} onPbRev={setPbRev}

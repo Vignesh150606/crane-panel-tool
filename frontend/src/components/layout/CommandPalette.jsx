@@ -19,16 +19,29 @@ export default function CommandPalette({ open, onClose }) {
 
   const results = useMemo(() => (query ? searchAll(query) : []), [query])
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setQuery('')
       setActiveIndex(0)
-      // wait for the mount/animation frame before focusing
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
+      // Focusing a DOM node is a genuine imperative side effect (not a
+      // state derivation), so this stays in an effect — waits for the
+      // mount/animation frame before focusing.
       requestAnimationFrame(() => inputRef.current?.focus())
     }
   }, [open])
 
-  useEffect(() => { setActiveIndex(0) }, [query])
+  const [prevQuery, setPrevQuery] = useState(query)
+  if (query !== prevQuery) {
+    setPrevQuery(query)
+    setActiveIndex(0)
+  }
 
   function go(entry) {
     if (!entry) return

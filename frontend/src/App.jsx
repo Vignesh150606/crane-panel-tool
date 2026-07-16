@@ -10,6 +10,7 @@ import Breadcrumb from './components/layout/Breadcrumb'
 import ProjectStatusBar from './components/layout/ProjectStatusBar'
 import ContextPanel from './components/layout/ContextPanel'
 import CommandPalette from './components/layout/CommandPalette'
+import TutorPanel from './components/tutor/TutorPanel'
 import { findNavItem } from './config/navigation'
 import { useUIStore } from './store/uiStore'
 
@@ -123,6 +124,7 @@ function AppShell() {
     <div className="min-h-screen lg:flex">
       <RecentTracker />
       <CommandPalette open={searchOpen} onClose={closeSearch} />
+      <TutorPanel />
       <div className="no-print">
         <Sidebar onOpenSearch={openSearch} />
         <MobileHeader onOpenSearch={openSearch} />

@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.config import ALLOWED_ORIGINS
-from app.routers import calculations, cable, bom
+from app.routers import calculations, cable, bom, tutor
 
 app = FastAPI(
     title="Crane Panel Tool API",
@@ -34,6 +34,7 @@ async def validation_exception_handler(request, exc):
 app.include_router(calculations.router)
 app.include_router(cable.router)
 app.include_router(bom.router)
+app.include_router(tutor.router)
 
 
 @app.get("/")

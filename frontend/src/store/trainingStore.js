@@ -9,7 +9,7 @@ import { safeStorage } from '../lib/safeStorage'
 // doesn't wipe out a learner's practice history, and vice versa.
 export const useTrainingStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       viewedComponents: [],      // Panel Explorer — component ids opened at least once
       challengeResults: {},      // { [faultId]: { solved, bestScore, attempts, hintsUsed } }
       commissioningRuns: [],     // [{ completedAt, score, maxScore, itemResults: {[itemId]: 'pass'|'fail'|'missed'} }]

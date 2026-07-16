@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   LayoutDashboard, RotateCcw, ArrowRight, AlertTriangle,
   FileText, Factory, Zap, Cable as CableIcon, ClipboardList, Compass, ShieldAlert,

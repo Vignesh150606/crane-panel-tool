@@ -12,7 +12,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, timeoutMs = 25000 } = {}) {
+async function request(path, { method = 'GET', body, timeoutMs = 25000, headers = {} } = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -20,7 +20,7 @@ async function request(path, { method = 'GET', body, timeoutMs = 25000 } = {}) {
   try {
     res = await fetch(`${API_BASE}${path}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     })
@@ -51,6 +51,6 @@ async function request(path, { method = 'GET', body, timeoutMs = 25000 } = {}) {
 }
 
 export const api = {
-  get: (path) => request(path),
-  post: (path, body) => request(path, { method: 'POST', body }),
+  get: (path, opts) => request(path, opts),
+  post: (path, body, opts) => request(path, { method: 'POST', body, ...opts }),
 }

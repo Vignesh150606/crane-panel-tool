@@ -4,6 +4,13 @@ A full-stack engineering application for designing EOT (Electric Overhead Travel
 control panels — motor sizing, cable/busbar selection, circuit design, panel layout, BOM
 generation and a printable project report, with every calculation backed by a formula
 explanation, worked example, IS/IEC standard reference and objective engineering status.
+Also includes an AI Engineering Tutor (context-aware of whatever page/calculation you're
+looking at, grounded in the app's own Handbook — see `V3_ENGINEERING_TUTOR.md`) and three
+scenario-based training modules: Panel Explorer, Challenge Mode, and Virtual Commissioning
+(see `TRAINING_PLATFORM_NOTES.md`).
+
+Full documentation set — architecture, API reference, deployment, engineering assumptions,
+limitations, roadmap, developer guide, demo guide, interview prep — is in `docs/`.
 
 Live: Frontend on Vercel, API on Render (see **Deployment** below for reconnecting them
 after this update).
@@ -15,15 +22,16 @@ after this update).
 ```
 frontend/   React 19 + Vite + Tailwind v4 + Zustand + Framer Motion
 backend/    FastAPI — the single source of truth for every engineering calculation
+            + Gemini (Engineering Tutor) + Supabase (tutor rate limits/cache)
 ```
 
 **Every calculation happens on the backend.** The frontend never re-implements a formula —
-it calls one of five endpoints and renders whatever comes back (numbers, the objective
-"engineering status", and the full explanation object). This was the biggest structural
-change from the previous version, where the backend existed but was never actually called;
-all sizing logic was duplicated in frontend JS. See `backend/app/engineering.py` for the
-formulas, `backend/app/explain.py` for the explanations, and `backend/app/status.py` for the
-margin/compliance logic.
+it calls one of five calculation endpoints and renders whatever comes back (numbers, the
+objective "engineering status", and the full explanation object). This was the biggest
+structural change from the previous version, where the backend existed but was never
+actually called; all sizing logic was duplicated in frontend JS. See
+`backend/app/engineering.py` for the formulas, `backend/app/explain.py` for the
+explanations, and `backend/app/status.py` for the margin/compliance logic.
 
 ```
 POST /api/motor          Motor HP, FLC, contactor/MPCB/cable/overload sizing (all 3 motions)
@@ -31,7 +39,12 @@ POST /api/nameplate       Same sizing, starting from known nameplate values
 POST /api/star-delta      DOL vs star-delta current/torque comparison
 POST /api/cable-busbar    Cable sizing, voltage drop, busbar-vs-stretch-wire recommendation
 POST /api/bom             Full bill of materials
+
+POST /api/tutor/ask       Engineering Tutor — context-aware Q&A (added in V3)
+GET  /api/tutor/usage     Remaining daily tutor questions for the caller
 ```
+
+Full request/response shapes for every endpoint are in `docs/API.md`.
 
 **Shared project state** (`frontend/src/store/projectStore.js`, Zustand + localStorage)
 lets data flow forward through the workflow — e.g. Load Calculator results prefill the BOM
@@ -40,8 +53,10 @@ if the store is empty (fresh visit, direct link, private browsing), so nothing b
 step is skipped or opened standalone.
 
 **Pages that don't call the backend** (Crane Selector, Control/Power Circuit, Panel
-Simulator, Panel Layout, Fault Diagnosis) are interactive simulators and reference content,
-not numeric calculators — there's no formula to centralize, so they stay client-side.
+Simulator, Panel Layout, Fault Diagnosis, Project Dashboard, Panel Explorer, Challenge Mode,
+Virtual Commissioning) are interactive simulators, training modules, and reference content,
+not numeric calculators — there's no formula to centralize, so they stay client-side. Full
+per-page breakdown in `docs/FOLDER_STRUCTURE.md`.
 
 **PDF export** uses the browser's native print-to-PDF (`window.print()`) against a dedicated
 print stylesheet (`index.css` → `@media print`), rather than a client-side PDF-rendering
@@ -78,6 +93,12 @@ Runs at `http://localhost:5173` and talks to `http://localhost:8000` by default 
 |---|---|---|
 | Vercel (frontend) | `VITE_API_URL` | Your Render backend URL, e.g. `https://crane-panel-api.onrender.com` |
 | Render (backend) | `ALLOWED_ORIGINS` | Your Vercel URL, e.g. `https://crane-panel-tool.vercel.app` (comma-separate multiple) |
+| Render (backend) | `GEMINI_API_KEY`, `GEMINI_MODEL` | Powers the Engineering Tutor — see `docs/DEPLOYMENT.md` |
+| Render (backend) | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | Tutor rate-limit/cache persistence — see `docs/DEPLOYMENT.md` |
+
+Full deployment walkthrough (including the one-time Supabase schema setup)
+is in `docs/DEPLOYMENT.md`. The rest of this section covers the calculator
+backend specifically, which needs only the first two variables above.
 
 Without `VITE_API_URL` set, the deployed frontend will try to reach `localhost:8000` and every
 calculation will fail with a clear "could not reach the calculation server" message rather
@@ -157,6 +178,22 @@ so a reviewer (or you, six months from now) can see the trail:
   bundle down to per-page chunks (largest is ~25kB); this was a direct fix for the
   "chunk >500kB" build warning, not a speculative optimization.
 
+**v1.0 productization pass** (see `V1.0_PRODUCTIZATION_REPORT.md` for full detail):
+- `MiniControlCircuit.jsx` (shared by Challenge Mode and Virtual Commissioning) had the
+  same class of bug the audit log above already found and fixed once in `ControlCircuit.jsx`
+  — deriving relay state via `useEffect` meant a one-render lag on every prop change, not
+  just a lint nitpick. Fixed using React's documented render-time state-adjustment pattern;
+  same fix applied to two more instances in `CommandPalette.jsx` and `MobileHeader.jsx`.
+  Frontend lint is now zero errors/warnings project-wide.
+- `frontend/ssr-smoke-test.mjs` only covered the 14 pages that existed when it was written —
+  the 4 pages added in the V2 training platform update were never added. Extended to cover
+  all 18; all pass.
+- This README itself was stale in three places (a `Navbar.jsx` reference to a component
+  deleted in the redesign, a "five endpoints" count missing the two tutor endpoints added in
+  V3, no mention of the Tutor or training modules in the opening description) — fixed here.
+- No `.gitignore` existed at the repo root — added one (`node_modules`, `dist`,
+  `__pycache__`, `.env`).
+
 **Known limitations, stated plainly rather than glossed over:**
 - `PanelLayout.jsx`'s clearance figures (100mm/75mm) are disclosed on-page as
   panel-builder practice, not a specific IEC 61439-6 clause — nobody has been able to
@@ -168,6 +205,10 @@ so a reviewer (or you, six months from now) can see the trail:
   been rewritten to the same educational depth yet.
 - A full accessibility pass (contrast audit, screen-reader labeling beyond the two fixes
   above) hasn't been done — only the two mouse-only controls found so far were fixed.
+
+Full current limitations list (including the V3 Engineering Tutor's, which weren't relevant
+when this section was first written) is kept in `docs/LIMITATIONS.md` going forward, so
+there's one place to check rather than two lists drifting apart.
 
 ---
 
@@ -197,14 +238,28 @@ backend/app/
   explain.py           Builds the formula/reasoning/standard/mistakes payload
   status.py            Builds the safety-margin / sizing-status / compliance payload
   data/standards.py    All constants, ratings tables, IS/IEC references — single source of truth
-  routers/             calculations.py, cable.py, bom.py
+  routers/             calculations.py, cable.py, bom.py, tutor.py
+  tutor/               Engineering Tutor backend — Gemini integration, Supabase-backed
+                       rate limiting/cache, prompt building (see docs/ARCHITECTURE.md)
 
 frontend/src/
   api/                 fetch client + typed endpoint wrappers
   store/                Zustand project state (persisted, with safe fallbacks)
   components/ui/        Shared design-system components (Button, Card, FormulaExplainer,
-                         EngineeringStatus, Toast, etc.)
-  components/layout/     Navbar, WorkflowStepper, PageTransition
-  pages/                 One file per route
+                         EngineeringStatus, Toast, CollapsibleSection, etc.)
+  components/layout/     Sidebar, MobileHeader, SidebarContent, CommandPalette,
+                         ContextPanel, WorkflowStepper, ProjectStatusBar, Breadcrumb,
+                         PageTransition
+  components/tutor/      TutorPanel, TutorMessage, SuggestedQuestions
+  components/training/   MiniControlCircuit, InspectionPanel (shared by Challenge Mode
+                         and Virtual Commissioning)
+  tutor/                 Engineering Tutor client logic — context building, handbook
+                         retrieval, the tutor API client (see docs/ARCHITECTURE.md)
+  pages/                 One file per route (18 pages — see docs/FOLDER_STRUCTURE.md)
   lib/validate.js       Client-side validation mirroring the backend's bounds
 ```
+
+Full annotated structure, including what every page/module does, is in
+`docs/FOLDER_STRUCTURE.md`. The complete documentation set — architecture,
+API reference, deployment, engineering assumptions, limitations, roadmap,
+developer guide, demo guide, interview prep — is in `docs/`.

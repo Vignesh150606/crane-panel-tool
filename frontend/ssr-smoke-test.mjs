@@ -18,6 +18,10 @@ const PAGES = [
   ['FaultDiagnosis', '/src/pages/FaultDiagnosis.jsx'],
   ['ProjectReport', '/src/pages/ProjectReport.jsx'],
   ['EngineeringHandbook', '/src/pages/EngineeringHandbook.jsx'],
+  ['ProjectDashboard', '/src/pages/ProjectDashboard.jsx'],
+  ['PanelExplorer', '/src/pages/PanelExplorer.jsx'],
+  ['ChallengeMode', '/src/pages/ChallengeMode.jsx'],
+  ['VirtualCommissioning', '/src/pages/VirtualCommissioning.jsx'],
 ]
 
 async function main() {

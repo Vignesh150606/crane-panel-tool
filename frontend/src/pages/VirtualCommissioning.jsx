@@ -12,6 +12,7 @@ import MiniControlCircuit from '../components/training/MiniControlCircuit'
 import InspectionPanel from '../components/training/InspectionPanel'
 import { COMMISSIONING_ITEMS, COMMISSIONING_MAX_SCORE } from '../data/commissioningChecklist'
 import { useTrainingStore } from '../store/trainingStore'
+import { usePublishTutorContext } from '../tutor/useTutorPageContext'
 
 export default function VirtualCommissioning() {
   const [started, setStarted] = useState(false)
@@ -154,12 +155,19 @@ function CommissioningItemCard({ item, isLast, onComplete }) {
   }
   const correct = assessment === item.correctAssessment
 
+  usePublishTutorContext('commissioning', [
+    `Commissioning step: "${item.label}" (${item.category}).`,
+    `Instructions given: ${item.instructions}`,
+    `Expected assessment (for hint calibration only — don't state outright unless asked or after a wrong attempt): ${item.correctAssessment}.`,
+    submitted ? `Student assessed this as "${assessment}", which was ${correct ? 'correct' : 'incorrect'}.` : 'Student has not yet submitted an assessment for this step.',
+  ].join(' '), { id: item.id, title: item.label })
+
   return (
     <Card padding="lg">
       {item.simConfig && (
         <div className="overflow-x-auto mb-5">
           <MiniControlCircuit
-            motionLabel={item.simConfig.motionLabel} fwdLabel={item.simConfig.fwdLabel} revLabel={item.simConfig.revLabel}
+            fwdLabel={item.simConfig.fwdLabel} revLabel={item.simConfig.revLabel}
             showMasterControls={item.simConfig.showMasterControls} showLimitControls={item.simConfig.showLimitControls}
             faults={item.simConfig.faults}
             pbFwd={pbFwd} pbRev={pbRev} onPbFwd={setPbFwd} onPbRev={setPbRev}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { computeNextActive } from '../../lib/relayLogic'
 
 /**
@@ -24,7 +24,7 @@ import { computeNextActive } from '../../lib/relayLogic'
  * a general-purpose fault combiner.
  */
 export default function MiniControlCircuit({
-  motionLabel = 'Motion', fwdLabel = 'FORWARD', revLabel = 'REVERSE',
+  fwdLabel = 'FORWARD', revLabel = 'REVERSE',
   pbFwd, pbRev, onPbFwd, onPbRev,
   limitFwd = false, limitRev = false, onLimitFwd, onLimitRev,
   eStop = false, onEStop,
@@ -37,20 +37,29 @@ export default function MiniControlCircuit({
   const effEStop = faults.eStopStuckPressed ? true : eStop
   const effOverload = faults.overloadWontReset ? (overloadTripped || faults.overloadWontReset === 'always') : overloadTripped
 
-  // activeDir is derived from the props above, but it depends on its OWN
-  // previous value (computeNextActive needs to know which direction
-  // currently holds the interlock claim to decide whether it should keep
-  // holding it) — that makes it genuine internal state, not a value to
-  // recompute fresh every render. Synced via effect (not during render)
-  // specifically to avoid updating state from within a render pass.
+  // activeDir is derived from the props above, but it also depends on its
+  // OWN previous value (computeNextActive needs to know which direction
+  // currently holds the interlock claim) — a genuine accumulating decision,
+  // not a pure function of this render's props alone. ControlCircuit.jsx
+  // (the primary page sharing this same decision function) drives this from
+  // its own event handlers directly; this component doesn't own pbFwd/pbRev
+  // etc. (they're controlled by the parent), so instead this follows React's
+  // sanctioned "adjust state during render" pattern: compare the relevant
+  // inputs against what they were last render (tracked in state, not a ref —
+  // this project's lint config forbids reading ref.current during render),
+  // and only conditionally setState when they've actually changed. This
+  // replaces an earlier useEffect-based version that called setState a
+  // render late — functionally a one-frame-stale bug as well as the
+  // lint-flagged cascading-render pattern.
   const [activeDir, setActiveDir] = useState(null)
-  useEffect(() => {
-    setActiveDir((prev) => computeNextActive(
-      { pbFwd, pbRev, limitFwd: effLimitFwd, limitRev: effLimitRev, eStop: effEStop, overload: effOverload, supplyLost: false },
-      prev
-    ))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pbFwd, pbRev, effLimitFwd, effLimitRev, effEStop, effOverload])
+  const [prevInputs, setPrevInputs] = useState(null)
+  const inputs = { pbFwd, pbRev, limitFwd: effLimitFwd, limitRev: effLimitRev, eStop: effEStop, overload: effOverload }
+  const inputsChanged = !prevInputs || Object.keys(inputs).some((k) => inputs[k] !== prevInputs[k])
+  if (inputsChanged) {
+    setPrevInputs(inputs)
+    const next = computeNextActive({ ...inputs, supplyLost: false }, activeDir)
+    if (next !== activeDir) setActiveDir(next)
+  }
 
   const controlPowerOk = !effEStop && !effOverload
 
