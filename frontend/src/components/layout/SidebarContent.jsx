@@ -20,13 +20,15 @@ function Row({ to, icon: Icon, label, active, collapsed, onNavigate, badge, numb
       onClick={onNavigate}
       title={collapsed ? label : undefined}
       className={`group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors mb-0.5
-        ${active ? 'bg-amber text-ink font-semibold' : 'text-text-muted hover:text-text hover:bg-surface-hover'}
+        ${active
+          ? "text-amber font-semibold bg-amber/10 before:content-[''] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-amber"
+          : 'text-text-muted hover:text-text hover:bg-surface-hover'}
         ${collapsed ? 'justify-center' : ''}`}
     >
       <span className="shrink-0 w-5 h-5 flex items-center justify-center">
         {numbered ? (
           <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[0.62rem] font-mono shrink-0
-            ${active ? 'bg-ink text-amber' : done ? 'bg-safe text-ink' : 'border border-steel-light'}`}>
+            ${active ? 'bg-ink text-amber border border-amber/50' : done ? 'bg-safe text-ink' : 'border border-steel-light'}`}>
             {done && !active ? <Check size={11} strokeWidth={3} /> : numbered}
           </span>
         ) : (

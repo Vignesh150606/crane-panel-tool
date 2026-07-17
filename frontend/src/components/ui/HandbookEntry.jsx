@@ -1,10 +1,26 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, BookMarked, AlertTriangle, Lightbulb, ArrowRight, GraduationCap, Bookmark } from 'lucide-react'
+import { ChevronDown, BookMarked, AlertTriangle, Lightbulb, ArrowRight, GraduationCap, Bookmark, Clock } from 'lucide-react'
 import { useHandbookStore } from '../../store/handbookStore'
 
+// Reading time is computed from the entry's own text (~200 wpm, the usual
+// estimate for short technical prose), not an authored/guessed difficulty —
+// authoring a real difficulty rating per topic needs engineering judgment
+// this pass didn't make, so only the objectively-computable figure is shown.
+function estimateReadingMinutes(topic) {
+  const text = [
+    topic.meaning, topic.assumptions, topic.workedExample,
+    topic.industrialNote, topic.interviewTip,
+    ...(topic.commonMistakes || []),
+    ...(topic.variables || []).map((v) => v.name),
+  ].filter(Boolean).join(' ')
+  const words = text.trim().split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(words / 200))
+}
+
 export default function HandbookEntry({ topic, defaultOpen = false, forwardedRef }) {
+  const readingMinutes = estimateReadingMinutes(topic)
   const [open, setOpen] = useState(defaultOpen)
   const bookmarked = useHandbookStore((s) => s.isBookmarked(topic.id))
   const toggleBookmark = useHandbookStore((s) => s.toggleBookmark)
@@ -25,7 +41,12 @@ export default function HandbookEntry({ topic, defaultOpen = false, forwardedRef
         className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer hover:bg-surface-hover transition-colors"
         aria-expanded={open}
       >
-        <span className="text-sm font-semibold text-text">{topic.title}</span>
+        <span className="flex items-baseline gap-2 min-w-0">
+          <span className="text-sm font-semibold text-text truncate">{topic.title}</span>
+          <span className="hidden sm:flex items-center gap-1 text-[0.65rem] text-text-dim shrink-0">
+            <Clock size={10} /> {readingMinutes} min
+          </span>
+        </span>
         <span className="flex items-center gap-1 shrink-0">
           <span
             role="button"

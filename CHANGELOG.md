@@ -3,7 +3,26 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
-## v1.0 — Productization pass (this release)
+## v1.0.2 — Premium UX pass (Phase 4)
+*Full detail: `REDESIGN_NOTES.md`, "Phase 4"*
+
+- Audited the live app against a full 14-phase "premium industrial
+  product" design brief before changing anything — most of it was already
+  shipped in earlier phases; see Phase 4 notes for what was verified vs.
+  genuinely fixed vs. deliberately left as-is (with reasons).
+- Engineering Tutor: answers now render lightweight markdown (bold terms,
+  bullet/numbered steps, standalone equations in the same style as
+  Handbook formulas) instead of one plain-text blob — fixed at the root by
+  adding formatting guidance to the Gemini prompt, not just the frontend.
+  New citation card for handbook-sourced answers, animated typing
+  indicator, glass/accent styling on the tutor dock.
+- Sidebar: active nav item changed from a solid amber fill to a subtle
+  tinted background + left accent bar (desktop rail and mobile drawer
+  both, one shared component) — same signal, less visual weight.
+- Engineering Handbook: entries now show a computed estimated reading
+  time.
+
+## v1.0 — Productization pass
 *Full detail: `V1.0_PRODUCTIZATION_REPORT.md`*
 
 - Codebase audit: fixed a real one-frame-stale bug in the shared crane

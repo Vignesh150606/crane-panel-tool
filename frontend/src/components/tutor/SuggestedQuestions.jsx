@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { Sparkles } from 'lucide-react'
 import { getRelatedTopics } from '../../data/workspaceIndex'
 
 const PAGE_SUGGESTIONS = {
@@ -26,14 +28,20 @@ export default function SuggestedQuestions({ pagePath, onPick }) {
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {suggestions.map((q) => (
-        <button
+      {suggestions.map((q, i) => (
+        <motion.button
           key={q}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15, delay: i * 0.04 }}
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => onPick(q)}
-          className="text-xs px-2.5 py-1.5 rounded-full border border-steel text-text-muted hover:border-copper/50 hover:text-copper transition-colors"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-steel bg-inset text-text-muted hover:border-copper/50 hover:text-copper hover:bg-copper/5 transition-colors cursor-pointer"
         >
+          <Sparkles size={11} className="shrink-0 opacity-70" />
           {q}
-        </button>
+        </motion.button>
       ))}
     </div>
   )

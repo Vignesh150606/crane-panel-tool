@@ -57,6 +57,14 @@ specific numbers.
 a textbook page.
 - Match the app's engineering rigor: cite the relevant IEC standard or engineering \
 principle when it strengthens the answer, the way the app's own Handbook does.
+- Format the "answer" text itself for scanning, the same restrained way the \
+Handbook does: wrap key terms, ratings, and standard references in **bold**; if \
+you're walking through more than two factors or steps, use a short "- " bullet \
+per item instead of one run-on sentence; if you state a formula, put it alone on \
+its own line (e.g. "FLC = P / (√3 × V × η × PF)"). This is plain text with light \
+markdown syntax, not a JSON formatting change — it still goes in the same \
+"answer" string. Don't force formatting onto a genuinely simple one-sentence \
+answer just to use it.
 
 NAVIGATION:
 - If a specific handbook topic, calculator, or page would help the student, set \

@@ -87,7 +87,7 @@ export default function TutorPanel() {
             transition={{ duration: 0.15 }}
             onClick={() => setOpen(true)}
             className="no-print fixed bottom-4 right-4 lg:bottom-6 lg:right-6 z-40 flex items-center gap-2 pl-2.5 pr-3.5 py-2.5
-                       rounded-full bg-surface border border-steel shadow-2xl hover:border-copper/50 transition-colors cursor-pointer"
+                       rounded-full bg-surface/95 backdrop-blur-md border border-steel shadow-2xl hover:border-copper/50 transition-colors cursor-pointer"
           >
             <span className="w-6 h-6 rounded-full bg-copper/20 border border-copper/40 flex items-center justify-center shrink-0">
               <GraduationCap size={13} className="text-copper" />
@@ -107,9 +107,10 @@ export default function TutorPanel() {
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.18 }}
             className="no-print fixed inset-x-0 bottom-0 z-50 lg:inset-auto lg:bottom-6 lg:right-6 lg:w-[400px]
-                       h-[82vh] lg:h-[min(75vh,640px)] bg-surface border border-steel rounded-t-2xl lg:rounded-2xl
+                       h-[82vh] lg:h-[min(75vh,640px)] bg-surface/95 backdrop-blur-md border border-steel rounded-t-2xl lg:rounded-2xl
                        shadow-2xl flex flex-col overflow-hidden"
           >
+            <div className="h-0.5 shrink-0 bg-gradient-to-r from-copper via-amber to-copper" />
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-steel shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-7 h-7 rounded-md bg-copper/20 border border-copper/40 flex items-center justify-center shrink-0">
@@ -151,11 +152,20 @@ export default function TutorPanel() {
               )}
               {messages.map((m) => <TutorMessage key={m.id} message={m} />)}
               {loading && (
-                <div className="flex gap-2 items-center text-xs text-text-dim">
-                  <span className="w-6 h-6 rounded-md bg-copper/20 border border-copper/40 flex items-center justify-center">
-                    <GraduationCap size={13} className="text-copper animate-pulse" />
+                <div className="flex gap-2 items-start">
+                  <span className="mt-0.5 w-6 h-6 rounded-full bg-copper/20 border border-copper/40 flex items-center justify-center shrink-0">
+                    <GraduationCap size={13} className="text-copper" />
                   </span>
-                  Thinking…
+                  <span className="rounded-2xl rounded-tl-md border border-steel bg-surface px-3.5 py-3 flex items-center gap-1">
+                    {[0, 1, 2].map((d) => (
+                      <motion.span
+                        key={d}
+                        className="w-1.5 h-1.5 rounded-full bg-text-dim"
+                        animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                        transition={{ duration: 0.9, repeat: Infinity, delay: d * 0.15, ease: 'easeInOut' }}
+                      />
+                    ))}
+                  </span>
                 </div>
               )}
               {error && (

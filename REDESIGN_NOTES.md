@@ -333,3 +333,128 @@ Load Calculator 30.1KB (was 17KB), Cable & Busbar 20KB (was ~8KB), Dashboard
 phase made in exchange for the visual comparison chart and motor-comparison
 chart the brief asked for — worth knowing about if bundle size on a free
 Vercel/Render tier ever becomes a concern.
+
+# Phase 4 — "Premium industrial product" pass: audit first, then targeted fixes
+
+Scope note up front, same reasoning as Phase 1: the brief this phase responds
+to is a generic 14-phase "make it feel like Linear/Figma/TIA Portal" request,
+written without visibility into what Phases 1–3 had already built. Before
+changing anything, this phase audited the live app against all 14 phases.
+Result: most of the structural asks were already shipped —
+
+- **Already done, verified against the brief, left alone:** collapsible
+  icon-rail sidebar with hover tooltips and grouped sections (brief Phase
+  1/2); a compact contextual right-panel with capped, card-based
+  formula/mistake/tip content, not paragraphs (brief Phase 3); chip-style
+  (not "tiny orange buttons") suggested questions in the tutor (brief
+  Phase 4); tiered `FormulaExplainer`/reveal-on-demand content on 11/18
+  pages with zero >220-char inline paragraphs found in a repo-wide grep
+  (brief Phase 5); the Load Calculator's input panel is already a compact
+  5-field sticky card, not the "huge, intimidating form" the brief
+  describes — see the code comment in `LoadCalculator.jsx` explaining why
+  a locked step wizard was deliberately replaced with tabs in an earlier
+  session (returning users jumping to what they need vs. re-walking steps).
+  Reverting that would be a real regression for a form this size, so it
+  was left as tabs rather than rebuilt into a wizard on the brief's say-so
+  alone — flagging this instead of silently overriding a documented past
+  decision.
+- **Already done, close enough to the brief's intent it wasn't touched:**
+  Crane Selector cards (large SVG, capacity/span stat blocks, hover lift,
+  selection state, working Compare mode — brief Phase 7); Engineering
+  Handbook (sticky scrollspy nav, search, bookmarks, recently-viewed,
+  collapsible formula/example entries — brief Phase 8, minus reading time,
+  fixed this phase, see below).
+- **Real gap found and fixed — Tutor response formatting.** The tutor
+  rendered every answer as one plain-text blob; nothing distinguished a
+  formula, a list of steps, or a key term from surrounding prose, despite
+  the brief explicitly asking for "beautiful markdown, equations,
+  engineering blocks." Root cause was on the backend, not just the
+  frontend: `prompt_builder.py`'s `SYSTEM_INSTRUCTION` told Gemini to
+  return concise plain prose with no formatting guidance at all, so there
+  was nothing for a frontend renderer to render even if one existed.
+  Fixed both ends:
+  - `backend/app/tutor/prompt_builder.py` — added a formatting instruction
+    (bold key terms/ratings, "- " bullets for >2-factor explanations,
+    standalone equation lines), scoped so it doesn't force structure onto
+    genuinely one-sentence answers.
+  - `frontend/src/components/tutor/TutorMarkdown.jsx` (new) — a small,
+    dependency-free formatter (no react-markdown/katex added — deliberate,
+    see file header) that renders `**bold**`, `` `inline code` ``, "- "/"1. "
+    lists, and equation-looking lines in the same amber mono "data face"
+    box already used for formulas in `HandbookEntry`/`ContextPanel`, so a
+    formula the tutor states reads as the same kind of object as one in
+    the Handbook. Verified in isolation with a small Node script covering
+    a formula+bullets answer, a plain one-sentence answer, and a numbered-
+    steps answer before wiring it into the message bubble.
+  - `TutorMessage.jsx` — rebuilt on top of it: rounded chat-app-style
+    bubbles, a real citation card for cached/handbook-sourced answers
+    (was a small text badge), a proper CTA-style button for suggested
+    navigation (was a text link).
+  - `TutorPanel.jsx` — replaced the "Thinking…" text loader with an
+    animated three-dot indicator in a bubble matching the response shape;
+    added a copper→amber accent line and glass (backdrop-blur) treatment
+    to the panel and launcher for a more premium chat-dock feel. A true
+    token-by-token typing animation was considered and deliberately not
+    built — the backend returns the full answer in one response (not a
+    stream), so "typing" it out character-by-character would be simulated
+    for its own sake and would slow down reading a technical answer,
+    working against the brief's own "reduce cognitive load" principle.
+  - `SuggestedQuestions.jsx` — added a staggered entrance and hover lift;
+    was already chip-shaped, just static.
+- **Real gap found and fixed — orange as UI chrome, not just accent.** The
+  brief's Phase 10 ask ("orange only indicates active/calculate/warning")
+  is mostly already true semantically, but the single heaviest, most
+  repeated block of solid orange in the app was the active sidebar nav
+  row (`bg-amber` solid fill) — present on every page, in both the desktop
+  rail and the mobile drawer (`MobileHeader.jsx` renders the same
+  `SidebarContent.jsx`, so one fix covers both). Changed to the
+  Linear/Notion convention: a subtle `bg-amber/10` tint + a 3px left
+  accent bar, amber text/icon — same visual signal, far less visual
+  weight. Left the rest of the amber usage alone: it's already scoped to
+  active tabs/filters, computed-value emphasis (the app's own documented
+  "Rating Plate" design metaphor — copper/amber marks calculated values on
+  purpose, see `index.css`), and primary CTAs, all of which are inside the
+  brief's own stated exceptions.
+- **Real gap found and fixed — Handbook reading time.** Brief Phase 8
+  explicitly asks for "estimated reading time" and "difficulty badge" per
+  topic; neither existed. Added reading time to `HandbookEntry.jsx`,
+  computed from each topic's own text (~200 wpm). Difficulty badge was
+  **not** added — that needs real per-topic engineering judgment (~40
+  topics) this pass didn't make, and a wrong/guessed difficulty rating
+  would be worse than none. Flagging as still open rather than faking it.
+
+## Deferred — not started this phase
+
+- **Difficulty badges per Handbook topic** — see above, needs authored
+  judgment, not invented.
+- **Load Calculator step-wizard** — see above, exists as a documented
+  disagreement with the brief rather than an oversight; happy to build the
+  wizard variant on explicit request despite the tradeoff.
+- **Per-page text-density line edits (brief Phase 5)** — the repo-wide
+  grep found no long inline paragraphs, so this wasn't a systemic problem
+  to fix; a handful of individual pages may still read as dense in
+  practice and would need eyes-on review, not a mechanical pass.
+- **PowerCircuit / ControlCircuit / FaultDiagnosis / PanelSimulator /
+  training pages** — not opened this phase beyond the repo-wide text-
+  density grep. These are the largest remaining files by line count and
+  are reasonable Phase 5 candidates if a deeper pass is wanted.
+- **KaTeX-rendered equations** — the brief's literal "equations" ask was
+  interpreted as "formulas read as distinct, formatted objects," which
+  `TutorMarkdown`'s equation-line detection delivers; true LaTeX/KaTeX
+  typesetting was not added (new dependency, and this app's formulas are
+  single-line IEC-style expressions, not multi-line math needing real
+  typesetting).
+- **Loading skeletons, broader micro-interaction pass, accessibility
+  audit (brief Phases 11/13)** — not started.
+
+## Files touched
+Backend: `backend/app/tutor/prompt_builder.py`. Frontend:
+`components/tutor/TutorMarkdown.jsx` (new), `TutorMessage.jsx` (rewrite),
+`TutorPanel.jsx` (edit), `SuggestedQuestions.jsx` (rewrite),
+`components/layout/SidebarContent.jsx` (edit), `components/ui/HandbookEntry.jsx`
+(edit).
+
+## Performance impact (Phase 4 delta)
+No new dependencies. `TutorMarkdown.jsx` is a new ~2KB module that only
+loads as part of the already-lazy tutor bundle. Build and lint both clean
+(`npm run build`, `npm run lint`) after this pass.
