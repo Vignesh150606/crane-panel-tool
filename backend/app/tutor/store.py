@@ -68,19 +68,32 @@ def try_consume(client_key: str, daily_limit: int, cooldown_seconds: int) -> Rat
     if client is None:
         return _mem_try_consume(client_key, daily_limit, cooldown_seconds)
 
-    result = client.rpc(
-        "tutor_usage_try_consume",
-        {
-            "p_client_key": client_key,
-            "p_daily_limit": daily_limit,
-            "p_cooldown_seconds": cooldown_seconds,
-        },
-    ).execute()
+    try:
+        result = client.rpc(
+            "tutor_usage_try_consume",
+            {
+                "p_client_key": client_key,
+                "p_daily_limit": daily_limit,
+                "p_cooldown_seconds": cooldown_seconds,
+            },
+        ).execute()
+    except Exception as exc:
+        # Supabase is configured but the call itself failed — wrong key,
+        # schema.sql was never run (function doesn't exist), network
+        # hiccup, etc. This used to propagate as an unhandled exception
+        # and crash the request with a 500 (which also meant the response
+        # never got CORS headers, since FastAPI's error-handling layer
+        # sits outside CORSMiddleware — the browser reports that as a CORS
+        # error even though the real cause is this exception). Falling
+        # back to in-memory keeps the tutor working; the print goes to
+        # Render's logs so the misconfiguration is still visible.
+        print(f"[tutor] Supabase rate-limit call failed, falling back to in-memory: {exc}")
+        return _mem_try_consume(client_key, daily_limit, cooldown_seconds)
+
     row = result.data[0] if result.data else None
     if not row:
-        # If Supabase is unreachable/misconfigured, fail open on the *IP*
-        # check but the caller still has the anon check as a backstop —
-        # see service.py. Never take down the whole tutor over a DB hiccup.
+        # Call succeeded but returned nothing usable — same fail-open
+        # reasoning as above.
         return RateLimitResult(True, None, 0)
     return RateLimitResult(
         allowed=row["allowed"],
@@ -98,13 +111,19 @@ def remaining_for_anon(anon_key: str, daily_limit: int) -> int:
         used = row["count"] if row else 0
         return max(0, daily_limit - used)
 
-    result = (
-        client.table("tutor_usage")
-        .select("count")
-        .eq("client_key", anon_key)
-        .eq("usage_date", _today_str())
-        .execute()
-    )
+    try:
+        result = (
+            client.table("tutor_usage")
+            .select("count")
+            .eq("client_key", anon_key)
+            .eq("usage_date", _today_str())
+            .execute()
+        )
+    except Exception as exc:
+        print(f"[tutor] Supabase usage lookup failed, reporting from in-memory: {exc}")
+        row = _mem_usage.get(f"{anon_key}:{_today_str()}")
+        used = row["count"] if row else 0
+        return max(0, daily_limit - used)
     used = result.data[0]["count"] if result.data else 0
     return max(0, daily_limit - used)
 
@@ -130,7 +149,11 @@ def get_cached(question: str) -> Optional[CachedAnswer]:
         return _mem_cache.get(key)
 
     cutoff = datetime.now(timezone.utc).timestamp() - config.CACHE_TTL_DAYS * 86400
-    result = client.table("tutor_cache").select("*").eq("question_key", key).execute()
+    try:
+        result = client.table("tutor_cache").select("*").eq("question_key", key).execute()
+    except Exception as exc:
+        print(f"[tutor] Supabase cache lookup failed, treating as a cache miss: {exc}")
+        return None
     if not result.data:
         return None
     row = result.data[0]
