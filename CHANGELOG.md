@@ -3,6 +3,21 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.0.3 — CORS: allow any Vercel deployment of this project
+
+`ALLOWED_ORIGINS` in Render was set to one exact origin, but every new
+Vercel deployment gets a new random-hash preview URL
+(`crane-panel-tool-<hash>-vignesh-m-s-projects1.vercel.app`), so the tutor
+broke on every push that changed the hash — browser reported it as a CORS
+preflight failure. `app/config.py` now also exposes
+`ALLOWED_ORIGIN_REGEX` (`^https://crane-panel-tool(-[a-zA-Z0-9]+)*\.vercel\.app$`),
+wired into `CORSMiddleware` in `app/main.py` alongside the existing exact
+list. Matches the stable production alias, every preview hash, and
+git-branch preview URLs — nothing to update in Render on future
+deployments. Unit-tested against the failing origin plus adversarial
+lookalikes (`evil-crane-panel-tool.vercel.app`, wrong TLD, `http://`
+instead of `https://`) before shipping.
+
 ## v1.0.2 — Premium UX pass (Phase 4)
 *Full detail: `REDESIGN_NOTES.md`, "Phase 4"*
 
