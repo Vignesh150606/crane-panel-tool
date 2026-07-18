@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, FileText, BookOpen, Tag, ArrowRight, CornerDownLeft } from 'lucide-react'
 import { searchAll } from '../../data/workspaceIndex'
+import { backdropFade, dialogScale } from '../../lib/motion'
 
 const TYPE_ICON = {
   'Page': FileText,
@@ -61,13 +62,12 @@ export default function CommandPalette({ open, onClose }) {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+        {...backdropFade}
         className="fixed inset-0 z-[60] bg-ink/70 backdrop-blur-sm flex items-start justify-center pt-[12vh] px-4"
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, y: -8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ duration: 0.15 }}
+          {...dialogScale}
           onClick={(e) => e.stopPropagation()}
           className="w-full max-w-xl bg-surface border border-steel rounded-2xl shadow-2xl overflow-hidden"
         >

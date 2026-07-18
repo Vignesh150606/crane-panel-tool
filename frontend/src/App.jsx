@@ -1,7 +1,8 @@
 import { Suspense, lazy, useEffect, useState, useCallback } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, MotionConfig } from 'framer-motion'
 import { ToastProvider } from './components/ui/Toast'
+import Skeleton from './components/ui/Skeleton'
 import Sidebar from './components/layout/Sidebar'
 import MobileHeader from './components/layout/MobileHeader'
 import PageTransition from './components/layout/PageTransition'
@@ -50,9 +51,20 @@ const WORKSPACE_EXCLUDED = new Set(['/', '/handbook', '/report', '/dashboard'])
 
 function RouteFallback() {
   return (
-    <div className="flex items-center justify-center py-24 text-text-dim text-sm">
-      <div className="w-4 h-4 border-2 border-steel border-t-amber rounded-full animate-spin mr-2.5" />
-      Loading page…
+    <div className="py-2" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading page…</span>
+      <Skeleton className="h-7 w-56 mb-3" />
+      <Skeleton className="h-4 w-96 max-w-full mb-8" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-steel p-5 space-y-3">
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -148,10 +160,18 @@ function AppShell() {
 
 export default function App() {
   return (
-    <Router>
-      <ToastProvider>
-        <AppShell />
-      </ToastProvider>
-    </Router>
+    // reducedMotion="user" makes every Framer Motion animation in the app
+    // (page transitions, sidebar, drawers, dialogs, the assist panel, button
+    // press states…) automatically honor the OS-level "reduce motion"
+    // preference — previously only plain CSS animations/transitions did
+    // (via the global @media rule in index.css); Framer Motion's own
+    // JS-driven animations were exempt from that rule entirely.
+    <MotionConfig reducedMotion="user">
+      <Router>
+        <ToastProvider>
+          <AppShell />
+        </ToastProvider>
+      </Router>
+    </MotionConfig>
   )
 }

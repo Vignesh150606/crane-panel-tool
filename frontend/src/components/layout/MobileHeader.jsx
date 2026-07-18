@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Zap, Menu, X, Search } from 'lucide-react'
 import SidebarContent from './SidebarContent'
+import { backdropFade, drawerSlideX } from '../../lib/motion'
 
 export default function MobileHeader({ onOpenSearch }) {
   const [open, setOpen] = useState(false)
@@ -60,14 +61,12 @@ export default function MobileHeader({ onOpenSearch }) {
         {open && (
           <>
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              {...backdropFade}
               className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm"
               onClick={() => setOpen(false)}
             />
             <motion.div
-              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
+              {...drawerSlideX}
               className="fixed inset-y-0 left-0 z-50 w-[84vw] max-w-[300px] bg-ink border-r border-steel flex flex-col"
             >
               <div className="h-16 flex items-center justify-between px-4 border-b border-steel shrink-0">

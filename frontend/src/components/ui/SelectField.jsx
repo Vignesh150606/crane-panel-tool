@@ -6,7 +6,7 @@ export default function SelectField({ label, value, onChange, options, helper, .
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-inset border border-steel rounded-md px-3 py-2 text-sm text-text
-          focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber cursor-pointer"
+          transition-[border-color,box-shadow] duration-150 focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber cursor-pointer"
         {...props}
       >
         {options.map((opt) => (

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { GraduationCap, BookOpen, X, Send, RotateCcw, AlertTriangle, Lightbulb, ArrowRight, Compass, MessageCircle } from 'lucide-react'
+import { DURATION, sheetSlideY } from '../../lib/motion'
 import { useAssistPanelStore } from '../../store/assistPanelStore'
 import { useTutorStore } from '../../tutor/tutorStore'
 import { useTutorContext } from '../../tutor/contextBuilder'
@@ -128,6 +129,7 @@ export default function AssistPanel() {
   const [input, setInput] = useState('')
   const context = useTutorContext()
   const scrollRef = useRef(null)
+  const dragControls = useDragControls()
 
   const hasContext = getRelatedTopics(location.pathname).length > 0 || !!getNextWorkflowStep(location.pathname)
 
@@ -196,7 +198,7 @@ export default function AssistPanel() {
           <motion.button
             key="assist-launcher"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.fast }}
             onClick={() => setMode(hasContext ? 'context' : 'tutor')}
             className="no-print fixed bottom-4 right-4 lg:bottom-6 lg:right-6 z-40 flex items-center gap-2 pl-2.5 pr-3.5 py-2.5
                        rounded-full bg-surface/95 backdrop-blur-md border border-steel shadow-2xl hover:border-copper/50 transition-colors cursor-pointer"
@@ -216,12 +218,26 @@ export default function AssistPanel() {
         {mode && (
           <motion.div
             key="assist-panel"
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
-            transition={{ duration: 0.18 }}
+            {...sheetSlideY}
+            drag="y"
+            dragControls={dragControls}
+            dragListener={false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.6 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120 || info.velocity.y > 600) close()
+            }}
             className="no-print fixed inset-x-0 bottom-0 z-50 lg:inset-auto lg:bottom-6 lg:right-6 lg:w-[400px]
                        h-[82vh] lg:h-[min(75vh,640px)] bg-surface/95 backdrop-blur-md border border-steel rounded-t-2xl lg:rounded-2xl
                        shadow-2xl flex flex-col overflow-hidden"
           >
+            {/* Drag handle — mobile only; the desktop floating panel isn't draggable */}
+            <div
+              className="lg:hidden flex items-center justify-center py-2 shrink-0 cursor-grab active:cursor-grabbing touch-none"
+              onPointerDown={(e) => dragControls.start(e)}
+            >
+              <div className="w-9 h-1 rounded-full bg-steel-light" />
+            </div>
             <div className="h-0.5 shrink-0 bg-gradient-to-r from-copper via-amber to-copper" />
             <div className="flex items-center justify-between gap-2 px-2 py-2 border-b border-steel shrink-0">
               <div className="flex items-center gap-1 min-w-0">

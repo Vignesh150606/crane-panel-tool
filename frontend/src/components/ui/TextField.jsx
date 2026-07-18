@@ -8,7 +8,7 @@ export default function TextField({ label, value, onChange, placeholder, ...prop
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-inset border border-steel rounded-md px-3 py-2 text-sm text-text
-          focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber"
+          transition-[border-color,box-shadow] duration-150 focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber"
         {...props}
       />
     </div>

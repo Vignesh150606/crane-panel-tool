@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { pressable } from '../../lib/motion'
 
 const VARIANTS = {
   primary: 'bg-amber text-ink font-semibold hover:bg-amber-dim border border-transparent',
@@ -27,9 +28,9 @@ export default function Button({
 }) {
   return (
     <motion.div
-      whileTap={disabled ? {} : { scale: 0.97 }}
-      whileHover={disabled ? {} : { y: -1 }}
-      transition={{ duration: 0.12 }}
+      whileTap={disabled ? {} : pressable.whileTap}
+      whileHover={disabled ? {} : pressable.whileHover}
+      transition={pressable.transition}
       className="inline-block"
     >
       <Component

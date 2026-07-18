@@ -53,6 +53,37 @@
   padding: 0;
 }
 
+/*
+  DESIGN SYSTEM — conventions
+  ────────────────────────────
+  Color/type tokens live in @theme above. The following aren't CSS
+  variables (Tailwind's own scales already cover them well) but ARE a
+  fixed convention every component should follow, so the app doesn't
+  accumulate a different radius/shadow per author:
+
+  Radius
+    rounded-md/lg   controls — buttons, inputs, badges, small chips
+    rounded-xl      cards, panels, inline surfaces
+    rounded-2xl     dialogs, sheets, the assist panel
+    rounded-full    pills, avatars, dots, icon-only circular buttons
+
+  Shadow / elevation
+    (none)          static surfaces at rest — most cards, panels
+    shadow-lg + hover:-translate-y-0.5   an interactive/clickable card
+                    lifting off the surface (see Card's `interactive` prop)
+    shadow-2xl      floating chrome always above content — command
+                    palette, the assist panel, dropdown menus
+
+  Motion (JS/Framer Motion side — see src/lib/motion.js)
+    DURATION.instant  press feedback
+    DURATION.fast     small chrome (backdrops, toggles, tooltips)
+    DURATION.base     default enter/exit
+    DURATION.slow     sheets, drawers
+    DURATION.slower   first-paint hero entrances only
+    Import from lib/motion.js rather than typing a new duration —
+    that file is the single source of truth for timing/easing.
+*/
+
 html {
   -webkit-text-size-adjust: 100%;
 }

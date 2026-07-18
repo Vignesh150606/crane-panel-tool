@@ -20,7 +20,7 @@ export default function NumberField({
             onChange(raw === '' ? '' : parseFloat(raw))
           }}
           className={`w-full bg-inset border rounded-md px-3 py-2 text-sm text-text font-mono
-            focus:outline-none focus:ring-2 focus:ring-amber/40 disabled:opacity-40
+            transition-[border-color,box-shadow] duration-150 focus:outline-none focus:ring-2 focus:ring-amber/40 disabled:opacity-40
             ${hasError ? 'border-danger' : 'border-steel focus:border-amber'}
             ${unit ? 'pr-12' : ''}`}
           {...props}

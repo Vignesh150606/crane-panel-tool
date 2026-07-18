@@ -138,7 +138,7 @@ function FeatureCard({ feature, delay }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay }}>
       <Link
         to={feature.path}
-        className={`group block bg-surface border rounded-xl p-5 hover:border-amber hover:-translate-y-0.5 transition-all duration-200 h-full relative
+        className={`group block bg-surface border rounded-xl p-5 hover:border-amber hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all duration-200 h-full relative
           ${feature.isHandbook ? 'border-amber/40' : 'border-steel'}`}
       >
         {feature.step && (
