@@ -5,10 +5,10 @@ import { ToastProvider } from './components/ui/Toast'
 import Skeleton from './components/ui/Skeleton'
 import Sidebar from './components/layout/Sidebar'
 import MobileHeader from './components/layout/MobileHeader'
+import BottomNav from './components/layout/BottomNav'
 import PageTransition from './components/layout/PageTransition'
 import Breadcrumb from './components/layout/Breadcrumb'
 import ProjectStatusBar from './components/layout/ProjectStatusBar'
-import PageHeader from './components/layout/PageHeader'
 import AssistPanel from './components/layout/AssistPanel'
 import CommandPalette from './components/layout/CommandPalette'
 import { findNavItem } from './config/navigation'
@@ -141,11 +141,10 @@ function AppShell() {
         <MobileHeader onOpenSearch={openSearch} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className={isReport ? '' : 'max-w-[1600px] 2xl:max-w-[1900px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8'}>
+        <div className={isReport ? 'pb-24 lg:pb-0' : 'max-w-[1600px] 2xl:max-w-[1900px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-8'}>
           {isWorkspace ? (
             <>
               <Breadcrumb path={location.pathname} />
-              <PageHeader path={location.pathname} />
               <ProjectStatusBar />
               <div className="min-w-0"><AnimatedRoutes /></div>
             </>
@@ -154,6 +153,7 @@ function AppShell() {
           )}
         </div>
       </div>
+      <BottomNav />
     </div>
   )
 }

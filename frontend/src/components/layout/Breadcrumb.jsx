@@ -9,7 +9,7 @@ export default function Breadcrumb({ path }) {
   const section = getSectionForPath(path)
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-dim mb-3">
+    <nav aria-label="Breadcrumb" className="hidden lg:flex items-center gap-1.5 text-xs text-text-dim mb-3">
       <Link to="/" className="hover:text-text-muted transition-colors">Home</Link>
       {section && (
         <>

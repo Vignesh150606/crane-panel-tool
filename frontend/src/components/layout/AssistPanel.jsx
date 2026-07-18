@@ -200,16 +200,32 @@ export default function AssistPanel() {
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
             transition={{ duration: DURATION.fast }}
             onClick={() => setMode(hasContext ? 'context' : 'tutor')}
-            className="no-print fixed bottom-4 right-4 lg:bottom-6 lg:right-6 z-40 flex items-center gap-2 pl-2.5 pr-3.5 py-2.5
-                       rounded-full bg-surface/95 backdrop-blur-md border border-steel shadow-2xl hover:border-copper/50 transition-colors cursor-pointer"
+            aria-label="Open engineering assist"
+            className="no-print fixed z-40 cursor-pointer transition-colors
+                       bottom-20 right-4 w-16 h-16 rounded-full bg-copper shadow-2xl active:bg-copper/80
+                       flex items-center justify-center
+                       lg:bottom-6 lg:right-6 lg:w-auto lg:h-auto lg:rounded-full lg:bg-surface/95 lg:backdrop-blur-md
+                       lg:border lg:border-steel lg:hover:border-copper/50 lg:flex lg:items-center lg:gap-2 lg:pl-2.5 lg:pr-3.5 lg:py-2.5"
           >
-            <span className="w-6 h-6 rounded-full bg-copper/20 border border-copper/40 flex items-center justify-center shrink-0">
-              <GraduationCap size={13} className="text-copper" />
+            {/* Mobile: icon fills the FAB, remaining-count shows as a corner badge */}
+            <span className="lg:hidden relative flex items-center justify-center">
+              <GraduationCap size={26} className="text-ink" strokeWidth={2.2} />
+              {remaining != null && (
+                <span className="absolute -top-3.5 -right-3.5 bg-ink border border-steel rounded-full text-[0.6rem] font-mono px-1.5 py-0.5 text-text-dim">
+                  {remaining}
+                </span>
+              )}
             </span>
-            <span className="text-sm font-medium text-text hidden sm:inline">Assist</span>
-            {remaining != null && (
-              <span className="text-[0.7rem] text-text-dim tabular-nums">{remaining}/{dailyLimit}</span>
-            )}
+            {/* Desktop: original compact pill */}
+            <span className="hidden lg:flex lg:items-center lg:gap-2">
+              <span className="w-6 h-6 rounded-full bg-copper/20 border border-copper/40 flex items-center justify-center shrink-0">
+                <GraduationCap size={13} className="text-copper" />
+              </span>
+              <span className="text-sm font-medium text-text">Assist</span>
+              {remaining != null && (
+                <span className="text-[0.7rem] text-text-dim tabular-nums">{remaining}/{dailyLimit}</span>
+              )}
+            </span>
           </motion.button>
         )}
       </AnimatePresence>
