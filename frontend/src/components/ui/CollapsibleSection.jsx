@@ -13,11 +13,11 @@ import { ChevronDown } from 'lucide-react'
  * results, and anything the student needs to see to proceed stay outside
  * this component, always visible.
  */
-export default function CollapsibleSection({ title, subtitle, icon: Icon, defaultOpen = false, badge, children }) {
+export default function CollapsibleSection({ title, subtitle, icon: Icon, defaultOpen = false, badge, className = '', children }) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className="border border-steel rounded-lg overflow-hidden bg-inset">
+    <div className={`border border-steel rounded-lg overflow-hidden bg-inset ${className}`}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-left cursor-pointer hover:bg-surface-hover transition-colors"
