@@ -31,7 +31,8 @@ export const useProjectStore = create(
       setStarDelta: (inputs, result) => set({ starDelta: { inputs, result } }),
       setBOM: (inputs, result) => set({ bom: { inputs, result } }),
 
-      // Which workflow steps have data — drives the WorkflowStepper's checkmarks.
+      // Which workflow steps have data — drives the sidebar's step checkmarks
+      // and the ProjectStatusBar completion LEDs.
       completedSteps: () => {
         const s = get()
         return {

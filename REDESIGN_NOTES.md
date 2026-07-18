@@ -458,3 +458,95 @@ Backend: `backend/app/tutor/prompt_builder.py`. Frontend:
 No new dependencies. `TutorMarkdown.jsx` is a new ~2KB module that only
 loads as part of the already-lazy tutor bundle. Build and lint both clean
 (`npm run build`, `npm run lint`) after this pass.
+
+# Phase 5 — Structural IA redesign
+
+Different mandate than Phases 1–4: explicit permission (and instruction) to
+delete/merge/move, evaluated against measurable targets rather than taste.
+Went back into the app shell itself rather than individual pages. Verified
+every change with a real build + a headless-browser pass (Playwright,
+screenshots + `getBoundingClientRect` measurements), not just "should work."
+
+## What shipped this phase
+
+- **Merged the two competing secondary panels into one.** The right-hand
+  `ContextPanel` was permanently mounted (a fixed 300px grid column, always
+  visible, on every workspace page) at the same time the `TutorPanel` could
+  independently be popped open as a floating dock — i.e. two secondary
+  panels really could be open simultaneously, which is exactly what target
+  #2 says shouldn't be possible. Deleted both components. Built
+  `AssistPanel.jsx`: one floating drawer, two tabs (Theory / Tutor), driven
+  by one new store (`assistPanelStore.js`, `mode: null|'context'|'tutor'`).
+  There is now exactly one drawer component in the codebase, so "two
+  secondary panels open at once" isn't a state that can exist, structurally,
+  not just by convention. Bonus: added a real cross-link — a "Ask Tutor"
+  button on each Theory card that switches to the Tutor tab and asks about
+  that specific topic, so the two modes reinforce each other instead of
+  duplicating each other's content.
+- **Workspace width — measured, not eyeballed.** Removing the permanent
+  300px context column let the main content grid go full-width. Measured
+  actual rendered content width vs. viewport with Playwright on the live
+  build: **81.7% at 1440px, 86.2% at 1920px, 74.2% at 2560px ultrawide**
+  (bumped the container's max-width one step at the `2xl` breakpoint so
+  ultrawide didn't fall short of the 70% target). All comfortably clear of
+  the 70% floor. Numbers are reproducible — see the Playwright snippet in
+  this repo's history if you want to re-run them after further changes.
+- **Deleted `WorkflowStepper.jsx`.** It was a full second copy of the exact
+  7-step workflow list already shown in the sidebar — same steps, same
+  numbers, same "current step" highlight, rendered a second time as a
+  horizontal bar above every page's content. Straightforwardly the
+  "duplicate navigation" target #5 was describing. The sidebar is now the
+  one place workflow position is shown. Also recovers real vertical space
+  on every page.
+- **The "5-second scan test" — found it failing on literally every
+  workspace page, fixed once at the shell level.** Grepped all 18 pages:
+  zero of them had an `<h1>` (only the print report did). Every workspace
+  page opened straight into filter chips / a form / a card grid with no
+  on-page statement of what it's for — the only wayfinding signal was a
+  12px breadcrumb. Rather than hand-edit 14 pages, added one
+  `PageHeader.jsx`, mounted once in `App.jsx` above the existing
+  Breadcrumb/ProjectStatusBar, that reads the title + one-line description
+  already sitting in `navigation.js` (used for tooltips, never surfaced as
+  an actual heading) and renders it as a real page title. Zero new copy
+  written — the descriptions were already good, just never shown. Covers
+  all 14 non-excluded workspace pages in one change; Home, Handbook,
+  Dashboard, and the Report already have their own purpose-built headers
+  and were correctly left alone (`WORKSPACE_EXCLUDED` in `App.jsx`).
+- **Verification, not just claims.** Built the app, installed deps fresh,
+  ran `npm run lint` and `npm run build` clean. Ran a headless Chromium
+  (Playwright) against the actual preview build: screenshotted Home, Crane
+  Selector, Load Calculator, Engineering Handbook, the Assist panel open
+  and closed, and a mobile (390px) view; measured real content-width
+  percentages at three viewport sizes rather than asserting the layout
+  math worked.
+
+## Deferred — not started this phase
+
+- **Per-page whitespace/typography pass (target #6) and the "hide one of
+  two useful things behind an interaction" pass (target #7)** — the shell
+  changes (merged panel, wider workspace, page headers) are the structural,
+  systemic wins; a page-by-page density/typography pass on all 18 pages is
+  a much larger, slower job (eyes-on per page, not a shared-component fix)
+  and wasn't attempted this round.
+- **Individual page content audits for duplicate explanations** beyond the
+  shell-level ones found (WorkflowStepper, the two-panel overlap) — e.g.
+  whether any single page repeats the same formula explanation in two
+  places on itself. Not checked page-by-page this round.
+- Same deferred items as Phase 4 (difficulty badges, Load Calculator
+  wizard reconsideration, KaTeX, accessibility audit) — unchanged.
+
+## Files touched
+New: `store/assistPanelStore.js`, `components/layout/AssistPanel.jsx`,
+`components/layout/PageHeader.jsx`. Deleted:
+`components/layout/ContextPanel.jsx`, `components/tutor/TutorPanel.jsx`,
+`components/layout/WorkflowStepper.jsx`. Edited: `App.jsx`,
+`tutor/tutorStore.js` (dropped now-unused `open`/`setOpen`/`toggleOpen`),
+`config/navigation.js` (comment only), `store/projectStore.js` (comment
+only).
+
+## Performance impact (Phase 5 delta)
+Net negative bundle size — this phase deleted more than it added
+(`TutorPanel.jsx` + `ContextPanel.jsx` + `WorkflowStepper.jsx` removed,
+`AssistPanel.jsx` + two small new files added, and `AssistPanel.jsx` reuses
+most of the deleted files' logic rather than duplicating it). No new
+dependencies. Build stayed clean.

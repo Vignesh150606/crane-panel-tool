@@ -3,6 +3,22 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.1.0 — Structural IA redesign (Phase 5)
+*Full detail: `REDESIGN_NOTES.md`, "Phase 5"*
+
+- Merged the always-open right-hand context panel and the floating AI
+  Tutor into one drawer (`AssistPanel.jsx`, two tabs) — only one secondary
+  panel can be open at a time now, structurally, not by convention.
+- Removed the permanent 300px context column. Main workspace now measures
+  **81.7%–86.2% of viewport width** at 1440–1920px (measured with
+  Playwright against the live build, not estimated).
+- Deleted `WorkflowStepper.jsx` — it duplicated the sidebar's own 7-step
+  workflow list on every page.
+- Added `PageHeader.jsx`: every workspace page now opens with a real title
+  + one-line "what to do here" instruction (previously zero of 18 pages
+  had an `<h1>`). Sourced from descriptions already in `navigation.js` —
+  no new copy needed.
+
 ## v1.0.3 — CORS: allow any Vercel deployment of this project
 
 `ALLOWED_ORIGINS` in Render was set to one exact origin, but every new

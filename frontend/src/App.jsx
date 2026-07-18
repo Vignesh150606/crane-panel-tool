@@ -4,13 +4,12 @@ import { AnimatePresence } from 'framer-motion'
 import { ToastProvider } from './components/ui/Toast'
 import Sidebar from './components/layout/Sidebar'
 import MobileHeader from './components/layout/MobileHeader'
-import WorkflowStepper from './components/layout/WorkflowStepper'
 import PageTransition from './components/layout/PageTransition'
 import Breadcrumb from './components/layout/Breadcrumb'
 import ProjectStatusBar from './components/layout/ProjectStatusBar'
-import ContextPanel from './components/layout/ContextPanel'
+import PageHeader from './components/layout/PageHeader'
+import AssistPanel from './components/layout/AssistPanel'
 import CommandPalette from './components/layout/CommandPalette'
-import TutorPanel from './components/tutor/TutorPanel'
 import { findNavItem } from './config/navigation'
 import { useUIStore } from './store/uiStore'
 
@@ -124,26 +123,19 @@ function AppShell() {
     <div className="min-h-screen lg:flex">
       <RecentTracker />
       <CommandPalette open={searchOpen} onClose={closeSearch} />
-      <TutorPanel />
+      <AssistPanel />
       <div className="no-print">
         <Sidebar onOpenSearch={openSearch} />
         <MobileHeader onOpenSearch={openSearch} />
       </div>
       <div className="flex-1 min-w-0">
-        {!isReport && (
-          <div className="no-print max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-            <WorkflowStepper />
-          </div>
-        )}
-        <div className={isReport ? '' : 'max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8'}>
+        <div className={isReport ? '' : 'max-w-[1600px] 2xl:max-w-[1900px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8'}>
           {isWorkspace ? (
             <>
               <Breadcrumb path={location.pathname} />
+              <PageHeader path={location.pathname} />
               <ProjectStatusBar />
-              <div className="grid xl:grid-cols-[1fr_300px] gap-6 items-start">
-                <div className="min-w-0"><AnimatedRoutes /></div>
-                <ContextPanel path={location.pathname} />
-              </div>
+              <div className="min-w-0"><AnimatedRoutes /></div>
             </>
           ) : (
             <AnimatedRoutes />

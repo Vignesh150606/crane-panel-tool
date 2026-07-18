@@ -1,9 +1,11 @@
 // Single source of truth for every page's nav metadata — path, label, icon,
 // description, and (for workflow pages) step number + the projectStore key
-// that marks it complete. Sidebar, Home, and WorkflowStepper all read from
-// here instead of keeping their own copies, which had already drifted out
-// of sync with each other (different labels/order in Navbar vs Home vs
-// WorkflowStepper before this pass).
+// that marks it complete. Sidebar and Home both read from here instead of
+// keeping their own copies, which had already drifted out of sync with each
+// other (different labels/order in different places before this pass). A
+// separate WorkflowStepper component used to duplicate the sidebar's own
+// step list at the top of every page — removed; the sidebar is the single
+// place workflow position is shown now.
 import {
   Home as HomeIcon, Factory, Calculator, Cable, CircuitBoard, LayoutGrid,
   ClipboardList, FileText, Tag, Triangle, Zap, Gamepad2, Search, BookOpen,

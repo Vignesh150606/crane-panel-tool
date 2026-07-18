@@ -27,7 +27,6 @@ function newMessageId() {
 export const useTutorStore = create((set) => ({
   clientId: getOrCreateClientId(),
 
-  open: false,
   // { id, role: 'user'|'tutor', content, navigation?, refused?, cached? }
   messages: [],
 
@@ -37,9 +36,6 @@ export const useTutorStore = create((set) => ({
 
   loading: false,
   error: null,
-
-  setOpen: (open) => set({ open }),
-  toggleOpen: () => set((s) => ({ open: !s.open })),
 
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, { id: newMessageId(), ...msg }] })),
 
