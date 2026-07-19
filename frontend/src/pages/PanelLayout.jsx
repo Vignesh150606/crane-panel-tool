@@ -62,7 +62,15 @@ export default function PanelLayout() {
             {COMPONENTS.map((c) => {
               const isHovered = hovered === c.id
               return (
-                <g key={c.id} onMouseEnter={() => setHovered(c.id)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
+                <g
+                  key={c.id}
+                  onMouseEnter={() => setHovered(c.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  onClick={() => setHovered((h) => (h === c.id ? null : c.id))}
+                  role="button" tabIndex={0} aria-label={c.label.replace('\n', ' ')}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setHovered((h) => (h === c.id ? null : c.id)) } }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <rect x={c.x} y={c.y} width={c.w} height={c.h} fill={`${c.color}${isHovered ? '55' : '33'}`} stroke={c.color} strokeWidth={isHovered ? 2.5 : 1.5} rx="3" />
                   {c.label.split('\n').map((line, i) => (
                     <text key={i} x={c.x + c.w / 2} y={c.y + c.h / 2 + (i - (c.label.split('\n').length - 1) / 2) * 11 + 3}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { computeNextActive } from '../../lib/relayLogic'
+import { useScrollOverflow } from '../../hooks/useScrollOverflow'
 
 /**
  * A single reversing (FWD/REV) relay branch pair, built for the two new
@@ -83,9 +84,18 @@ export default function MiniControlCircuit({
   const wire = (on) => (controlPowerOk && on) ? 'var(--color-safe)' : 'var(--color-steel)'
   const wireClass = (on) => (controlPowerOk && on) ? 'wire-flow' : ''
 
+  // The diagram has a 440px legibility floor (min-w-[440px] below) so
+  // labels stay readable, but a phone viewport can be narrower than that —
+  // measured 390px available vs 440px needed on both pages that use this.
+  // Rather than compress it into illegibility, it scrolls horizontally,
+  // with a hint (below) shown only when there's actually somewhere to
+  // scroll to. Now shared with ControlCircuit.jsx via useScrollOverflow.
+  const [scrollRef, canScroll] = useScrollOverflow()
+
   return (
     <div>
-      <svg width="100%" height="330" viewBox="0 0 480 330" className="font-mono min-w-[440px]">
+      <div ref={scrollRef} className="overflow-x-auto">
+        <svg width="100%" height="330" viewBox="0 0 480 330" className="font-mono min-w-[440px]">
         {showMasterControls && (
           <>
             <text x="10" y="14" fill="var(--color-danger)" fontSize="9" fontWeight="bold">MASTER FEED</text>
@@ -133,7 +143,11 @@ export default function MiniControlCircuit({
         <line x1="410" y1="278" x2="410" y2="300" stroke={wire(relayRevEnergized)} className={wireClass(relayRevEnergized)} strokeWidth="2" />
         <ContactorBox x={330} y={160} energized={contactorRevOn} relayOn={relayRevEnergized} label={`Cont.\n${revLabel}`} broken={faults.contactorRevWontClose} />
         <line x1="410" y1={showMasterControls ? 40 : 15} x2="410" y2="220" stroke={wire(relayRevEnergized)} className={wireClass(relayRevEnergized)} strokeWidth="2" />
-      </svg>
+        </svg>
+      </div>
+      {canScroll && (
+        <div className="text-text-dim text-[0.65rem] text-center mt-1">← scroll to see the full circuit →</div>
+      )}
 
       {(showLimitControls || showMasterControls) && (
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2 text-xs">

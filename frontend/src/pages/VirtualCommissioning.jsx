@@ -165,7 +165,7 @@ function CommissioningItemCard({ item, isLast, onComplete }) {
   return (
     <Card padding="lg">
       {item.simConfig && (
-        <div className="overflow-x-auto mb-5">
+        <div className="mb-5">
           <MiniControlCircuit
             fwdLabel={item.simConfig.fwdLabel} revLabel={item.simConfig.revLabel}
             showMasterControls={item.simConfig.showMasterControls} showLimitControls={item.simConfig.showLimitControls}

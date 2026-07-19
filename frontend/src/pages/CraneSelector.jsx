@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Factory, Grid3x3, Columns3, Check, X, Factory as FactoryIcon, Settings2, BarChart3, Lightbulb, ArrowRight } from 'lucide-react'
@@ -39,6 +39,7 @@ export default function CraneSelector() {
   const [selected, setSelected] = useState(storedCraneType || null)
   const [filter, setFilter] = useState('All')
   const [view, setView] = useState('grid')
+  const detailRef = useRef(null)
 
   const cranes = Object.values(CRANE_TYPES)
   const filtered = filter === 'All' ? cranes : cranes.filter((c) => c.category === filter)
@@ -133,10 +134,15 @@ export default function CraneSelector() {
       <AnimatePresence>
         {selectedCrane && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            ref={detailRef}
+            initial="collapsed"
+            animate="expanded"
+            exit="collapsed"
+            variants={{ collapsed: { opacity: 0, height: 0 }, expanded: { opacity: 1, height: 'auto' } }}
             transition={{ duration: 0.3 }}
+            onAnimationComplete={(def) => {
+              if (def === 'expanded') detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
             className="overflow-hidden"
           >
             <DetailPanel crane={selectedCrane} onClose={() => setSelected(null)} onContinue={() => navigate('/calculator')} />

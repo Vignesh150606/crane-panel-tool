@@ -5,6 +5,7 @@ import PageHeader from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
+import { useScrollOverflow } from '../hooks/useScrollOverflow'
 
 const PROTECTION_LAYERS_EXPLANATION = {
   formula: 'MCB (incomer) → SPP (phase-loss) → MPCB (per-motor) — three devices, three different failure modes, deliberately not combined into one.',
@@ -59,6 +60,7 @@ const COMPONENTS = [
 export default function PowerCircuit() {
   const [highlighted, setHighlighted] = useState(null)
   const [animated, setAnimated] = useState(false)
+  const [scrollRef, canScroll] = useScrollOverflow()
 
   const comp = highlighted ? COMPONENTS.find((c) => c.id === highlighted) : null
   const lineColor = animated ? 'var(--color-safe)' : 'var(--color-steel)'
@@ -86,7 +88,8 @@ export default function PowerCircuit() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5">
-        <Card padding="lg" className="overflow-x-auto">
+        <Card padding="lg">
+          <div ref={scrollRef} className="overflow-x-auto">
           <svg width="600" height="480" viewBox="0 0 600 480" className="font-mono min-w-[560px]">
             <text x="10" y="30" fill="var(--color-text-muted)" fontSize="11">3-Phase 415V Supply</text>
             {['R', 'Y', 'B'].map((phase, i) => (
@@ -108,6 +111,10 @@ export default function PowerCircuit() {
             <BranchRow y={240} label="LONG TRAVEL" highlighted={highlighted} onHover={setHighlighted} lineColor={lineColor} lineClass={lineClass} mpcbId="mpcb_lt" contId="cont_lt" motorId="motor_lt" />
             <BranchRow y={370} label="CROSS TRAVEL" highlighted={highlighted} onHover={setHighlighted} lineColor={lineColor} lineClass={lineClass} mpcbId="mpcb_ct" contId="cont_ct" motorId="motor_ct" />
           </svg>
+          </div>
+          {canScroll && (
+            <div className="text-text-dim text-[0.65rem] text-center mt-1.5">← scroll to see the full circuit →</div>
+          )}
         </Card>
 
         <div className="flex flex-col gap-4">

@@ -27,6 +27,17 @@ export default function ChallengeMode() {
 
   const fault = FAULTS.find((f) => f.id === selectedFaultId) || null
   const solvedCount = Object.values(challengeResults).filter((r) => r.solved).length
+  const totalXp = Object.values(challengeResults).reduce((sum, r) => sum + (r.solved ? r.bestScore : 0), 0)
+
+  const nextUnsolvedFault = (afterId) => {
+    const ids = FAULTS.map((f) => f.id)
+    const startIdx = afterId ? ids.indexOf(afterId) : -1
+    for (let i = 1; i <= ids.length; i++) {
+      const candidate = FAULTS[(startIdx + i) % FAULTS.length]
+      if (!challengeResults[candidate.id]?.solved) return candidate.id
+    }
+    return null // everything solved
+  }
 
   if (!fault) {
     return (
@@ -35,7 +46,12 @@ export default function ChallengeMode() {
           icon={Gamepad2}
           title="Industrial Challenge Mode"
           description="Scenario-based fault diagnosis. Operate the live circuit or take real measurements, reason through the evidence, then diagnose — hints cost points, wrong attempts cost more."
-          actions={<Badge tone="safe" dot={false}><Trophy size={11} className="inline -mt-0.5 mr-1" />{solvedCount}/{FAULTS.length} solved</Badge>}
+          actions={
+            <div className="flex items-center gap-2">
+              <Badge tone="caution" dot={false}>{totalXp} XP</Badge>
+              <Badge tone="safe" dot={false}><Trophy size={11} className="inline -mt-0.5 mr-1" />{solvedCount}/{FAULTS.length} solved</Badge>
+            </div>
+          }
         />
 
         <div className="flex items-center gap-1.5 mb-5 flex-wrap">
@@ -80,6 +96,20 @@ export default function ChallengeMode() {
             the same scenarios reveal-by-reveal, no scoring. Come back here once you want to diagnose them live.
           </p>
         </div>
+
+        {solvedCount === FAULTS.length && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex items-center gap-2.5 bg-safe-dim/30 border border-safe/40 rounded-xl px-4 py-3"
+          >
+            <Trophy size={16} className="text-safe shrink-0" />
+            <p className="text-safe text-sm font-medium">
+              All {FAULTS.length} scenarios solved — {totalXp} XP total. Head to{' '}
+              <Link to="/commissioning" className="underline underline-offset-2">Virtual Commissioning</Link> to put it all together.
+            </p>
+          </motion.div>
+        )}
       </div>
     )
   }
@@ -88,6 +118,8 @@ export default function ChallengeMode() {
     <ScenarioWorkspace
       fault={fault}
       onExit={() => setSelectedFaultId(null)}
+      nextFaultId={nextUnsolvedFault(fault.id)}
+      onNext={(id) => setSelectedFaultId(id)}
       onRecordResult={recordChallengeResult}
     />
   )
@@ -97,7 +129,7 @@ function selectScenario(id, setSelectedFaultId) {
   setSelectedFaultId(id)
 }
 
-function ScenarioWorkspace({ fault, onExit, onRecordResult }) {
+function ScenarioWorkspace({ fault, onExit, nextFaultId, onNext, onRecordResult }) {
   const [pbFwd, setPbFwd] = useState(false)
   const [pbRev, setPbRev] = useState(false)
   const [limitFwd, setLimitFwd] = useState(false)
@@ -156,7 +188,7 @@ function ScenarioWorkspace({ fault, onExit, onRecordResult }) {
           </Card>
 
           {fault.simConfig && (
-            <Card padding="lg" className="overflow-x-auto">
+            <Card padding="lg">
               <h3 className="font-display text-amber font-semibold mb-3 text-sm">Live Circuit — {fault.simConfig.motionLabel}</h3>
               <MiniControlCircuit
                 fwdLabel={fault.simConfig.fwdLabel} revLabel={fault.simConfig.revLabel}
@@ -204,13 +236,24 @@ function ScenarioWorkspace({ fault, onExit, onRecordResult }) {
               )}
               {outcome === 'correct' && (
                 <motion.div key="correct" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 flex flex-col gap-3">
-                  <div className="flex items-start gap-2 bg-safe-dim/40 border border-safe/40 rounded-md px-3.5 py-3">
-                    <CheckCircle2 size={15} className="text-safe shrink-0 mt-0.5" />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                    className="flex items-start gap-2 bg-safe-dim/40 border border-safe/40 rounded-md px-3.5 py-3"
+                  >
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 14, delay: 0.08 }}
+                    >
+                      <CheckCircle2 size={15} className="text-safe shrink-0 mt-0.5" />
+                    </motion.span>
                     <div>
                       <div className="text-safe text-sm font-semibold mb-1">Correctly diagnosed — {score} points</div>
                       <p className="text-text-muted text-xs leading-relaxed">{fault.diagnosisOptions.find((o) => o.correct)?.rationale}</p>
                     </div>
-                  </div>
+                  </motion.div>
                   <Card variant="inset">
                     <div className="text-amber text-xs font-semibold mb-1.5">Root Cause</div>
                     <p className="text-text-muted text-sm leading-relaxed mb-3">{fault.cause}</p>
@@ -233,7 +276,12 @@ function ScenarioWorkspace({ fault, onExit, onRecordResult }) {
                 {outcome === 'wrong' ? 'Try Again' : 'Submit Diagnosis'}
               </Button>
             ) : (
-              <Button variant="outline" icon={ArrowLeft} onClick={onExit}>Back to Scenarios</Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                {nextFaultId && (
+                  <Button icon={ChevronRight} iconPosition="right" onClick={() => onNext(nextFaultId)}>Next Challenge</Button>
+                )}
+                <Button variant="outline" icon={ArrowLeft} onClick={onExit}>All Scenarios</Button>
+              </div>
             )}
           </Card>
         </div>

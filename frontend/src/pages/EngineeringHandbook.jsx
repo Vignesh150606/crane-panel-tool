@@ -7,6 +7,28 @@ import HandbookEntry from '../components/ui/HandbookEntry'
 import { HANDBOOK_SECTIONS, PROTECTION_GLOSSARY, IEC_SYMBOLS } from '../data/handbookContent'
 import { useHandbookStore } from '../store/handbookStore'
 
+// Simple scroll-through-the-document percentage — the one piece of the
+// "reading mode" ask genuinely missing here. Everything else it asks for
+// (reading time, collapsed-by-default advanced content, formula callouts,
+// bookmarks) already exists per-topic in HandbookEntry.
+function useReadingProgress() {
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    function onScroll() {
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      setProgress(max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+  return progress
+}
+
 const FAQ = [
   {
     q: 'Why does this app use 2x FLC for contactor sizing instead of the 3x figure I\'ve seen elsewhere?',
@@ -47,6 +69,7 @@ export default function EngineeringHandbook() {
   const openedFromHash = useRef(false)
   const bookmarks = useHandbookStore((s) => s.bookmarks)
   const recent = useHandbookStore((s) => s.recent)
+  const progress = useReadingProgress()
 
   const filteredSections = useMemo(() => {
     if (!search.trim()) return HANDBOOK_SECTIONS
@@ -99,6 +122,10 @@ export default function EngineeringHandbook() {
 
   return (
     <div>
+      <div className="no-print fixed top-0 inset-x-0 h-[3px] z-[45] bg-steel/30" aria-hidden="true">
+        <div className="h-full bg-amber" style={{ width: `${progress}%` }} />
+      </div>
+
       <PageHeader
         icon={BookOpen}
         title="Engineering Handbook"

@@ -8,6 +8,7 @@ import Button from '../components/ui/Button'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import { computeNextActive } from '../lib/relayLogic'
 import { usePublishTutorContext } from '../tutor/useTutorPageContext'
+import { useScrollOverflow } from '../hooks/useScrollOverflow'
 
 const MOTIONS = {
   LT: { label: 'Long Travel', fwd: 'FORWARD', rev: 'REVERSE', relayFwd: 'R1', relayRev: 'R2' },
@@ -92,6 +93,7 @@ export default function ControlCircuit() {
   const [supplyLost, setSupplyLost] = useState(false)
 
   const [activeDir, setActiveDir] = useState(null)
+  const [scrollRef, canScroll] = useScrollOverflow()
 
   const m = MOTIONS[motion]
   const controlPowerOk = !supplyLost && !eStop && !overloadTripped
@@ -185,7 +187,8 @@ export default function ControlCircuit() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5">
-        <Card padding="lg" className="overflow-x-auto">
+        <Card padding="lg">
+          <div ref={scrollRef} className="overflow-x-auto">
           <svg width="700" height="460" viewBox="0 0 700 460" className="font-mono min-w-[640px]">
             {/* MASTER FEED: E-STOP + OVERLOAD RELAY NC, in series, upstream of the
                 whole circuit below. Either one opening removes power from BOTH
@@ -245,6 +248,10 @@ export default function ControlCircuit() {
             <ContactorCoil x={560} y={230} energized={relayRevEnergized} label={`Contactor\n${m.rev}`} />
             <line x1="580" y1="65" x2="580" y2="230" stroke={wire(relayRevEnergized)} className={wireClass(relayRevEnergized)} strokeWidth="2.5" />
           </svg>
+          </div>
+          {canScroll && (
+            <div className="text-text-dim text-[0.65rem] text-center mt-1.5">← scroll to see the full circuit →</div>
+          )}
         </Card>
 
         <div className="flex flex-col gap-4">
