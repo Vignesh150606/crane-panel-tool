@@ -22,6 +22,7 @@ import EngineeringStatus from '../components/ui/EngineeringStatus'
 import AssumedVsComputed from '../components/ui/AssumedVsComputed'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
+import CollapsibleSection from '../components/ui/CollapsibleSection'
 import { useToast } from '../hooks/useToast'
 import { calcMotor } from '../api/calculations'
 import { validateFields, hasErrors, BOUNDS } from '../lib/validate'
@@ -91,6 +92,23 @@ export default function LoadCalculator() {
   const revealTimers = useRef([])
   useEffect(() => () => revealTimers.current.forEach(clearTimeout), [])
 
+  // Tracks whether the real Calculate button (in the input panel) is
+  // currently on screen. Below the lg breakpoint the input panel isn't
+  // sticky — once someone scrolls into the results tabs it disappears
+  // entirely, so there's no way to tweak an input and recalculate without
+  // scrolling all the way back up. When it scrolls out of view we show a
+  // floating bar with the same action pinned to the bottom of the screen.
+  const primaryCalcBtnRef = useRef(null)
+  const inputPanelRef = useRef(null)
+  const [primaryBtnVisible, setPrimaryBtnVisible] = useState(true)
+  useEffect(() => {
+    const el = primaryCalcBtnRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => setPrimaryBtnVisible(entry.isIntersecting), { threshold: 0.01 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   const motorKeys = results ? Object.keys(results.motors) : []
   const activeKey = activeMotorKey && motorKeys.includes(activeMotorKey) ? activeMotorKey : motorKeys[0]
 
@@ -134,7 +152,10 @@ export default function LoadCalculator() {
   const calculate = async () => {
     const fieldErrors = validate()
     setErrors(fieldErrors)
-    if (hasErrors(fieldErrors)) return
+    if (hasErrors(fieldErrors)) {
+      inputPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
 
     setLoading(true)
     setApiError(null)
@@ -193,9 +214,13 @@ export default function LoadCalculator() {
         />
       )}
 
-      <div className="grid grid-cols-1 2xl:grid-cols-[340px_1fr] gap-6 items-start">
-        {/* ── Persistent input panel — always visible and editable, not a one-time step ── */}
-        <Card padding="lg" className="2xl:sticky 2xl:top-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+        {/* ── Persistent input panel — always visible and editable, not a one-time step.
+            Sticky from lg up (previously only 2xl+, which left tablet and small-desktop
+            users unable to see the Calculate button once they scrolled into the results
+            tabs below). ── */}
+        <div ref={inputPanelRef} className="lg:sticky lg:top-6">
+        <Card padding="lg">
           <h2 className="font-display text-amber font-semibold mb-1 text-sm">Crane Parameters</h2>
           <p className="text-text-dim text-xs mb-4">
             Enter rated load and motion speeds, or switch to custom HP if you already know the motor sizes.
@@ -212,18 +237,18 @@ export default function LoadCalculator() {
 
           {!inputs.useCustomHP ? (
             <>
-              <NumberField label="Rated Load" value={inputs.load} onChange={(v) => update('load', v)} unit="tonnes" min={0.5} max={500} step={0.5} error={errors.load} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 gap-x-3">
-                <NumberField label="Hoist Speed" value={inputs.hoistSpeed} onChange={(v) => update('hoistSpeed', v)} unit="m/min" min={1} max={30} error={errors.hoistSpeed} />
-                <NumberField label="Long Travel Speed" value={inputs.ltSpeed} onChange={(v) => update('ltSpeed', v)} unit="m/min" min={5} max={80} error={errors.ltSpeed} />
-                <NumberField label="Cross Travel Speed" value={inputs.ctSpeed} onChange={(v) => update('ctSpeed', v)} unit="m/min" min={5} max={40} error={errors.ctSpeed} />
+              <NumberField size="lg" label="Rated Load" value={inputs.load} onChange={(v) => update('load', v)} unit="tonnes" min={0.5} max={500} step={0.5} error={errors.load} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-3">
+                <NumberField size="lg" label="Hoist Speed" value={inputs.hoistSpeed} onChange={(v) => update('hoistSpeed', v)} unit="m/min" min={1} max={30} error={errors.hoistSpeed} />
+                <NumberField size="lg" label="Long Travel Speed" value={inputs.ltSpeed} onChange={(v) => update('ltSpeed', v)} unit="m/min" min={5} max={80} error={errors.ltSpeed} />
+                <NumberField size="lg" label="Cross Travel Speed" value={inputs.ctSpeed} onChange={(v) => update('ctSpeed', v)} unit="m/min" min={5} max={40} error={errors.ctSpeed} />
               </div>
             </>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 gap-x-3">
-              <NumberField label="Hoist Motor HP" value={inputs.hoistHP} onChange={(v) => update('hoistHP', v)} unit="HP" error={errors.hoistHP} />
-              <NumberField label="LT Motor HP" value={inputs.ltHP} onChange={(v) => update('ltHP', v)} unit="HP" error={errors.ltHP} />
-              <NumberField label="CT Motor HP" value={inputs.ctHP} onChange={(v) => update('ctHP', v)} unit="HP" error={errors.ctHP} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-3">
+              <NumberField size="lg" label="Hoist Motor HP" value={inputs.hoistHP} onChange={(v) => update('hoistHP', v)} unit="HP" error={errors.hoistHP} />
+              <NumberField size="lg" label="LT Motor HP" value={inputs.ltHP} onChange={(v) => update('ltHP', v)} unit="HP" error={errors.ltHP} />
+              <NumberField size="lg" label="CT Motor HP" value={inputs.ctHP} onChange={(v) => update('ctHP', v)} unit="HP" error={errors.ctHP} />
             </div>
           )}
 
@@ -235,9 +260,11 @@ export default function LoadCalculator() {
             helper="Looked up per motor from IEC 60034-30-1, not one flat number."
           />
 
-          <Button className="w-full mt-1" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
-            {loading ? 'Calculating…' : results ? 'Recalculate' : 'Calculate'}
-          </Button>
+          <span ref={primaryCalcBtnRef} className="block mt-1">
+            <Button className="w-full" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
+              {loading ? 'Calculating…' : results ? 'Recalculate' : 'Calculate'}
+            </Button>
+          </span>
 
           {apiError && <div className="mt-3"><ErrorBanner message={apiError} onRetry={calculate} retrying={loading} /></div>}
 
@@ -245,6 +272,7 @@ export default function LoadCalculator() {
             Defaults to 415V 3-phase supply and 0.85 power factor — see "Assumed vs. computed" in the Overview tab after calculating.
           </p>
         </Card>
+        </div>
 
         {/* ── Results workspace ── */}
         <div className="min-w-0">
@@ -328,7 +356,11 @@ export default function LoadCalculator() {
                             })}
                           </div>
 
-                          <AssumedVsComputed assumptions={results.assumptions} />
+                          {results.assumptions?.length > 0 && (
+                            <CollapsibleSection title="Assumed vs. computed inputs" subtitle="What was entered vs. what the app filled in" icon={CheckCircle2}>
+                              <AssumedVsComputed assumptions={results.assumptions} bare />
+                            </CollapsibleSection>
+                          )}
                         </>
                       )}
                     </div>
@@ -466,6 +498,28 @@ export default function LoadCalculator() {
           )}
         </div>
       </div>
+
+      {/* Below lg the input panel scrolls with the page rather than staying
+          pinned (see the sticky comment above), so once it's off-screen this
+          takes over as the one dominant action — same handler, same label.
+          Sits above the bottom nav and the assist FAB rather than under them. */}
+      <AnimatePresence>
+        {!primaryBtnVisible && (
+          <motion.div
+            initial={{ y: 32, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 32, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="lg:hidden fixed inset-x-0 bottom-40 z-30 px-4 pointer-events-none"
+          >
+            <div className="max-w-md mx-auto bg-surface border border-steel rounded-xl shadow-2xl shadow-black/50 p-2.5 pointer-events-auto">
+              <Button className="w-full" size="lg" icon={Zap} onClick={calculate} disabled={loading}>
+                {loading ? 'Calculating…' : results ? 'Recalculate' : 'Calculate'}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
