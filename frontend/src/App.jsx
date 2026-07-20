@@ -41,13 +41,14 @@ const ProjectDashboard = lazy(() => import('./pages/ProjectDashboard'))
 const PanelExplorer = lazy(() => import('./pages/PanelExplorer'))
 const ChallengeMode = lazy(() => import('./pages/ChallengeMode'))
 const VirtualCommissioning = lazy(() => import('./pages/VirtualCommissioning'))
+const TutorPage = lazy(() => import('./pages/TutorPage'))
 
 // Pages that manage their own full layout and opt out of the shared
 // breadcrumb / project-status-bar / context-panel workspace chrome: the
 // marketing home page, the handbook (its own two-column doc layout), the
 // print-focused report, and the dashboard (which *is* the project summary,
 // so wrapping it in another one would be redundant).
-const WORKSPACE_EXCLUDED = new Set(['/', '/handbook', '/report', '/dashboard'])
+const WORKSPACE_EXCLUDED = new Set(['/', '/handbook', '/report', '/dashboard', '/tutor'])
 
 function RouteFallback() {
   return (
@@ -105,6 +106,7 @@ function AnimatedRoutes() {
           <Route path="/panel-explorer" element={<PageTransition><PanelExplorer /></PageTransition>} />
           <Route path="/challenge-mode" element={<PageTransition><ChallengeMode /></PageTransition>} />
           <Route path="/commissioning" element={<PageTransition><VirtualCommissioning /></PageTransition>} />
+          <Route path="/tutor" element={<PageTransition><TutorPage /></PageTransition>} />
         </Routes>
       </Suspense>
     </AnimatePresence>

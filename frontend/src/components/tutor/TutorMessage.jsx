@@ -1,7 +1,31 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, GraduationCap, BookOpen, User } from 'lucide-react'
+import { ArrowRight, GraduationCap, BookOpen, User, Copy, Check } from 'lucide-react'
 import TutorMarkdown from './TutorMarkdown'
+
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text)
+          setCopied(true)
+          setTimeout(() => setCopied(false), 1500)
+        } catch {
+          // Clipboard API can be unavailable (older browsers, insecure
+          // context) — failing quietly here is fine, copy is a convenience,
+          // not the core action.
+        }
+      }}
+      className="inline-flex items-center gap-1 text-[0.7rem] text-text-dim hover:text-text transition-colors cursor-pointer"
+    >
+      {copied ? <Check size={11} className="text-safe" /> : <Copy size={11} />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  )
+}
 
 export default function TutorMessage({ message }) {
   const navigate = useNavigate()
@@ -59,6 +83,8 @@ export default function TutorMessage({ message }) {
             <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" />
           </button>
         )}
+
+        {!message.refused && <CopyButton text={message.content} />}
       </div>
     </motion.div>
   )

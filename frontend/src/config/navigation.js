@@ -9,7 +9,7 @@
 import {
   Home as HomeIcon, Factory, Calculator, Cable, CircuitBoard, LayoutGrid,
   ClipboardList, FileText, Tag, Triangle, Zap, Gamepad2, Search, BookOpen,
-  LayoutDashboard, LayoutPanelTop, ClipboardCheck,
+  LayoutDashboard, LayoutPanelTop, ClipboardCheck, GraduationCap,
 } from 'lucide-react'
 
 export const HOME_ITEM = { path: '/', label: 'Home', icon: HomeIcon }
@@ -27,6 +27,17 @@ export const HANDBOOK_ITEM = {
   icon: BookOpen,
   description: 'Every formula used in this app in one place — equation, worked example, and where it\'s actually used. Start here if you\'re new.',
   isNew: true,
+}
+
+// Reachable via the Ask Tutor launcher on every other page, not the
+// sidebar/bottom nav — it's a utility grounded in whatever page you came
+// from, not a destination you browse to directly. Still a real route
+// (findNavItem, breadcrumbs, uiStore.recent all need it registered).
+export const TUTOR_ITEM = {
+  path: '/tutor',
+  label: 'Engineering Tutor',
+  icon: GraduationCap,
+  description: 'Ask about whatever you\'re working on — a calculation, a component, a formula, or where to start.',
 }
 
 // The seven-step guided design flow, in order. `key` maps to
@@ -78,7 +89,7 @@ export const TRAINING_ITEMS = [
     description: '13-step commissioning checklist, in order. Some checks include a wrong reading you have to catch, not rubber-stamp.', isNew: true },
 ]
 
-export const ALL_NAV_ITEMS = [HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS, ...TRAINING_ITEMS]
+export const ALL_NAV_ITEMS = [HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, TUTOR_ITEM, ...WORKFLOW_ITEMS, ...REFERENCE_ITEMS, ...TRAINING_ITEMS]
 
 export function findNavItem(path) {
   return ALL_NAV_ITEMS.find((i) => i.path === path) || null

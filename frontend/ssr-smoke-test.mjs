@@ -22,6 +22,7 @@ const PAGES = [
   ['PanelExplorer', '/src/pages/PanelExplorer.jsx'],
   ['ChallengeMode', '/src/pages/ChallengeMode.jsx'],
   ['VirtualCommissioning', '/src/pages/VirtualCommissioning.jsx'],
+  ['TutorPage', '/src/pages/TutorPage.jsx'],
 ]
 
 async function main() {

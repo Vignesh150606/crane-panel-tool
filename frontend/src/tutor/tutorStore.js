@@ -37,6 +37,15 @@ export const useTutorStore = create((set) => ({
   loading: false,
   error: null,
 
+  // The full useTutorContext() object from the last page the user was on
+  // that WASN'T /tutor itself, plus when it was captured. AssistPanel keeps
+  // this in sync on every render except while actually on /tutor (see its
+  // sync effect) — so by the time /tutor mounts, location-based context
+  // would be useless (page_path would just be "/tutor"), but this already
+  // has the real snapshot from wherever the user came from.
+  lastContext: null,
+  lastContextAt: null,
+
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, { id: newMessageId(), ...msg }] })),
 
   setUsage: ({ remaining_today, daily_limit, cooldown_seconds }) => set((s) => ({
@@ -48,4 +57,5 @@ export const useTutorStore = create((set) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   clearConversation: () => set({ messages: [], error: null }),
+  setLastContext: (context) => set({ lastContext: context, lastContextAt: Date.now() }),
 }))
