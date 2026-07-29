@@ -194,9 +194,9 @@ function CommissioningItemCard({ item, isLast, onComplete }) {
         item.confirmOnly ? (
           <Button icon={CheckCircle2} onClick={() => submit('pass')}>Confirm Completed</Button>
         ) : (
-          <div className="flex gap-3">
-            <Button variant="outline" icon={ThumbsUp} onClick={() => submit('pass')}>Assess: PASS</Button>
-            <Button variant="outline" icon={ThumbsDown} onClick={() => submit('fail')}>Assess: FAIL</Button>
+          <div className="flex gap-3 flex-wrap">
+            <Button className="bg-safe text-ink font-semibold hover:bg-safe/90" icon={ThumbsUp} onClick={() => submit('pass')}>Assess: PASS</Button>
+            <Button variant="danger" icon={ThumbsDown} onClick={() => submit('fail')}>Assess: FAIL</Button>
           </div>
         )
       ) : (

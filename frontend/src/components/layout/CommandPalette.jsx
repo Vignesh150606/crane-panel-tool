@@ -16,45 +16,46 @@ export default function CommandPalette({ open, onClose }) {
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef(null)
+  const dialogRef = useRef(null)
   const navigate = useNavigate()
 
   const results = useMemo(() => (query ? searchAll(query) : []), [query])
 
-  const [prevOpen, setPrevOpen] = useState(open)
-  if (open !== prevOpen) {
-    setPrevOpen(open)
-    if (open) {
-      setQuery('')
-      setActiveIndex(0)
-    }
-  }
-
   useEffect(() => {
     if (open) {
-      // Focusing a DOM node is a genuine imperative side effect (not a
-      // state derivation), so this stays in an effect — waits for the
-      // mount/animation frame before focusing.
       requestAnimationFrame(() => inputRef.current?.focus())
     }
   }, [open])
 
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
+  function handleClose() {
+    setQuery('')
     setActiveIndex(0)
+    onClose()
   }
 
   function go(entry) {
     if (!entry) return
     navigate(entry.to)
-    onClose()
+    handleClose()
   }
 
   function handleKeyDown(e) {
-    if (e.key === 'Escape') { onClose(); return }
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, results.length - 1)) }
-    if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)) }
-    if (e.key === 'Enter') { e.preventDefault(); go(results[activeIndex]) }
+    if (e.key === 'Escape') {
+      handleClose()
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((i) => (results.length > 0 ? Math.min(i + 1, results.length - 1) : 0))
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => Math.max(i - 1, 0))
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (results[activeIndex]) go(results[activeIndex])
+    }
   }
 
   if (!open) return null
@@ -64,10 +65,14 @@ export default function CommandPalette({ open, onClose }) {
       <motion.div
         {...backdropFade}
         className="fixed inset-0 z-[60] bg-ink/70 backdrop-blur-sm flex items-start justify-center pt-[12vh] px-4"
-        onClick={onClose}
+        onClick={handleClose}
       >
         <motion.div
           {...dialogScale}
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search command palette"
           onClick={(e) => e.stopPropagation()}
           className="w-full max-w-xl bg-surface border border-steel rounded-2xl shadow-2xl overflow-hidden"
         >
@@ -76,12 +81,15 @@ export default function CommandPalette({ open, onClose }) {
             <input
               ref={inputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setActiveIndex(0)
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Search formulas, components, pages, IEC symbols…"
               className="flex-1 bg-transparent py-3.5 text-sm text-text placeholder:text-text-dim outline-none"
             />
-            <button onClick={onClose} className="text-text-dim hover:text-text cursor-pointer shrink-0" aria-label="Close search">
+            <button onClick={handleClose} className="text-text-dim hover:text-text cursor-pointer shrink-0" aria-label="Close search">
               <X size={17} />
             </button>
           </div>

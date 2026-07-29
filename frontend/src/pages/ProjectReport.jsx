@@ -15,8 +15,14 @@ import { FAULTS } from '../data/faultLibrary'
 const TODAY = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
 
 export default function ProjectReport() {
-  const store = useProjectStore()
-  const { project, craneType, motors, cableBusbar, starDelta, bom } = store
+  const project = useProjectStore((s) => s.project)
+  const craneType = useProjectStore((s) => s.craneType)
+  const motors = useProjectStore((s) => s.motors)
+  const cableBusbar = useProjectStore((s) => s.cableBusbar)
+  const starDelta = useProjectStore((s) => s.starDelta)
+  const bom = useProjectStore((s) => s.bom)
+  const setProject = useProjectStore((s) => s.setProject)
+
   const [editing, setEditing] = useState(!project.name)
   const training = trainingSummary(useTrainingStore())
   const hasTrainingActivity = training.componentsViewed > 0 || training.challengesSolved > 0 || training.lastCommissioningScore !== null
@@ -26,16 +32,16 @@ export default function ProjectReport() {
   return (
     <div className="min-h-screen bg-ink">
       {/* Toolbar — hidden on print */}
-      <div className="no-print sticky top-0 z-10 bg-ink/95 backdrop-blur border-b border-steel">
+      <div className="no-print sticky top-0 z-10 bg-ink/95 backdrop-blur border-b border-steel shadow-sm">
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link to="/bom" className="flex items-center gap-1.5 text-text-muted hover:text-text text-sm">
+          <Link to="/bom" className="flex items-center gap-1.5 text-text-muted hover:text-text text-sm font-medium">
             <ArrowLeft size={15} /> Back
           </Link>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" icon={editing ? Check : Pencil} onClick={() => setEditing((e) => !e)}>
-              {editing ? 'Done editing' : 'Edit project info'}
+              {editing ? 'Done editing' : 'Edit info'}
             </Button>
-            <Button size="sm" icon={Printer} onClick={() => window.print()}>Print / Save as PDF</Button>
+            <Button variant="primary" size="sm" icon={Printer} onClick={() => window.print()}>Print / Save as PDF</Button>
           </div>
         </div>
       </div>
@@ -51,7 +57,7 @@ export default function ProjectReport() {
             </h1>
             {editing ? (
               <div className="max-w-sm mx-auto mt-4 text-left">
-                <TextField label="Project Name" value={project.name} onChange={(v) => store.setProject({ name: v })} placeholder="e.g. 10T EOT Crane — Panel Design" />
+                <TextField label="Project Name" value={project.name} onChange={(v) => setProject({ name: v })} placeholder="e.g. 10T EOT Crane — Panel Design" />
               </div>
             ) : (
               <p className="text-amber print:text-black font-semibold mt-2">{project.name || 'Untitled Project'}</p>
@@ -62,9 +68,9 @@ export default function ProjectReport() {
           <Section title="Project Information">
             {editing ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                <TextField label="Engineer" value={project.engineer} onChange={(v) => store.setProject({ engineer: v })} placeholder="Your name" />
-                <TextField label="College / Organisation" value={project.college} onChange={(v) => store.setProject({ college: v })} placeholder="e.g. SSN College of Engineering" />
-                <TextField label="Date" value={project.date} onChange={(v) => store.setProject({ date: v })} placeholder={TODAY} />
+                <TextField label="Engineer" value={project.engineer} onChange={(v) => setProject({ engineer: v })} placeholder="Your name" />
+                <TextField label="College / Organisation" value={project.college} onChange={(v) => setProject({ college: v })} placeholder="e.g. SSN College of Engineering" />
+                <TextField label="Date" value={project.date} onChange={(v) => setProject({ date: v })} placeholder={TODAY} />
               </div>
             ) : (
               <InfoGrid items={[
@@ -188,7 +194,7 @@ export default function ProjectReport() {
             {editing ? (
               <textarea
                 value={project.notes}
-                onChange={(e) => store.setProject({ notes: e.target.value })}
+                onChange={(e) => setProject({ notes: e.target.value })}
                 placeholder="Add any project-specific notes, deviations from standard assumptions, or site conditions here…"
                 rows={4}
                 className="w-full bg-inset border border-steel rounded-md px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber resize-y"

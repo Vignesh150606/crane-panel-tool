@@ -84,8 +84,8 @@ export default function Home() {
       <section className="pt-6 pb-4">
         <div className="flex items-end justify-between gap-4 mb-5 flex-wrap">
           <div>
-            <h2 className="font-display text-xl font-semibold text-text mb-1">Design Workflow</h2>
-            <p className="text-text-dim text-sm">Seven steps, in order — but every page also works standalone.</p>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-text mb-1">Design Workflow</h2>
+            <p className="text-text-muted text-sm sm:text-base">Seven steps in sequence — or jump directly to any step standalone.</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -96,7 +96,7 @@ export default function Home() {
       </section>
 
       {/* ── Reference Tools ──────────────────────────────────────────── */}
-      <section className="pt-10 pb-4">
+      <section className="pt-8 pb-4">
         <div className="mb-5">
           <h2 className="font-display text-xl font-semibold text-text mb-1">Reference Tools</h2>
           <p className="text-text-dim text-sm">Standalone calculators and simulators — use anytime, no setup needed.</p>
@@ -110,7 +110,7 @@ export default function Home() {
       </section>
 
       {/* ── Training Modules ─────────────────────────────────────────── */}
-      <section className="pt-10 pb-4">
+      <section className="pt-8 pb-4">
         <div className="mb-5">
           <h2 className="font-display text-xl font-semibold text-text mb-1">Industrial Training Platform</h2>
           <p className="text-text-dim text-sm">Practice on a realistic panel, diagnose live faults, and run a full commissioning checklist.</p>

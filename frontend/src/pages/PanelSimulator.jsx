@@ -84,10 +84,9 @@ export default function PanelSimulator() {
 
           <button
             onClick={eStop}
-            className="w-full bg-danger text-white py-4 rounded-lg border-[3px] font-black text-lg cursor-pointer mb-6 tracking-widest hover:brightness-110 transition-all"
-            style={{ borderColor: '#dc2626' }}
+            className="w-full bg-danger text-white py-4 rounded-lg border-2 border-danger-dim font-black text-lg cursor-pointer mb-6 tracking-widest hover:brightness-110 transition-all shadow-md"
           >
-            <Octagon size={18} className="inline mr-2 -mt-1" /> EMERGENCY STOP
+            <Octagon size={18} className="inline mr-2 -mt-1" aria-hidden="true" /> EMERGENCY STOP
           </button>
 
           {Object.entries(MOTIONS).map(([key, m]) => (
@@ -108,6 +107,8 @@ export default function PanelSimulator() {
                     key={dir}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => activate(key, dir)}
+                    aria-pressed={active[key] === dir}
+                    aria-label={`Activate ${m.label} ${dir}`}
                     className="py-2.5 rounded-md border-2 font-semibold text-sm cursor-pointer transition-colors"
                     style={{
                       borderColor: active[key] === dir ? m.color : 'var(--color-steel)',

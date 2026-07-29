@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   LayoutDashboard, RotateCcw, ArrowRight, ShieldAlert, Compass, PartyPopper,
@@ -58,9 +59,23 @@ function getEngineeringWarnings(store) {
 }
 
 export default function ProjectDashboard() {
-  const store = useProjectStore()
-  const { project, craneType, motors, cableBusbar, starDelta, bom, resetProject } = store
-  const steps = store.completedSteps()
+  const [confirmReset, setConfirmReset] = useState(false)
+  const project = useProjectStore((s) => s.project)
+  const craneType = useProjectStore((s) => s.craneType)
+  const motors = useProjectStore((s) => s.motors)
+  const cableBusbar = useProjectStore((s) => s.cableBusbar)
+  const starDelta = useProjectStore((s) => s.starDelta)
+  const bom = useProjectStore((s) => s.bom)
+  const resetProject = useProjectStore((s) => s.resetProject)
+
+  const steps = {
+    crane: !!craneType,
+    load: !!motors,
+    cable: !!cableBusbar?.result,
+    circuit: !!starDelta?.result,
+    bom: !!bom?.result,
+  }
+
   const crane = craneType ? CRANE_TYPES[craneType] : null
   const training = trainingSummary(useTrainingStore())
   const recent = useUIStore((s) => s.recent)
@@ -71,13 +86,9 @@ export default function ProjectDashboard() {
   const isFresh = doneCount === 0
   const isComplete = doneCount === totalCount
 
-  // Which numbered workflow steps have no data yet — the first one drives
-  // the hero card; all of them stay reachable as links on the step chips
-  // below instead of a separate "incomplete sections" list repeating the
-  // same set.
   const incomplete = WORKFLOW_ITEMS.filter((w) => w.key && !steps[w.key])
   const nextTask = incomplete[0] || (isComplete ? WORKFLOW_ITEMS.find((w) => w.path === '/report') : null)
-  const warnings = getEngineeringWarnings(store)
+  const warnings = getEngineeringWarnings({ motors, cableBusbar })
   const hasDesignData = !!(crane || motors || cableBusbar || bom)
 
   return (
@@ -87,12 +98,30 @@ export default function ProjectDashboard() {
         title="Project Dashboard"
         description="Where you left off, and what to do next."
         actions={
-          <button
-            onClick={() => { if (confirm('Reset all project data? This clears every step and cannot be undone.')) resetProject() }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-dim hover:text-danger border border-steel hover:border-danger/40 rounded-md px-3 py-1.5 transition-colors cursor-pointer"
-          >
-            <RotateCcw size={13} /> Reset Project
-          </button>
+          confirmReset ? (
+            <div className="flex items-center gap-2 bg-danger-dim/40 border border-danger/40 rounded-lg px-3 py-1 text-xs">
+              <span className="text-danger font-medium">Reset all project data?</span>
+              <button
+                onClick={() => { resetProject(); setConfirmReset(false) }}
+                className="bg-danger text-white font-bold px-2 py-0.5 rounded text-xs hover:brightness-110"
+              >
+                Yes, Reset
+              </button>
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="text-text-muted hover:text-text px-1.5 py-0.5 text-xs"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmReset(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-dim hover:text-danger border border-steel hover:border-danger/40 rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
+            >
+              <RotateCcw size={13} /> Reset Project
+            </button>
+          )
         }
       />
 

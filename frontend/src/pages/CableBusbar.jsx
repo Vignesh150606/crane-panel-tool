@@ -94,7 +94,7 @@ export default function CableBusbar() {
           floating action bar like Load Calculator — same underlying problem
           (recalculating required scrolling back up past a multi-screen
           results view) with a simpler fix given this card's shape. */}
-      <Card className="mb-6 sticky top-14 lg:top-6 z-30">
+      <Card className="mb-6 sticky top-14 lg:top-6 z-30 shadow-md bg-surface/95 backdrop-blur-md">
         <h2 className="font-display text-amber font-semibold mb-3 text-sm">Circuit Parameters</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4">
           <NumberField label="Full Load Current" value={inputs.flc} onChange={(v) => update('flc', v)} unit="A" error={errors.flc} />

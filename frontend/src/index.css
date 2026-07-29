@@ -16,9 +16,11 @@
   --color-ink: #0a0f14;
   --color-surface: #121a21;
   --color-surface-hover: #17212a;
+  --color-surface-raised: #161f28;
   --color-inset: #0b1116;
   --color-steel: #253544;
   --color-steel-light: #34495c;
+  --color-overlay: rgba(10, 15, 20, 0.85);
 
   /* Accents */
   --color-copper: #c9804f;
@@ -45,6 +47,18 @@
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Radius System */
+  --radius-sm: 0.375rem; /* rounded-md / 6px */
+  --radius-md: 0.5rem;   /* rounded-lg / 8px */
+  --radius-lg: 0.75rem;  /* rounded-xl / 12px */
+  --radius-xl: 1rem;     /* rounded-2xl / 16px */
+
+  /* Elevation / Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
 }
 
 * {

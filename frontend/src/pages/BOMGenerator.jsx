@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ClipboardList, Zap, ArrowRight, Download } from 'lucide-react'
+import { ClipboardList, Zap, ArrowRight, Printer } from 'lucide-react'
 
 import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
@@ -76,7 +76,7 @@ export default function BOMGenerator() {
         icon={ClipboardList}
         title="BOM Generator"
         description="Generate a complete Bill of Materials from your motor ratings — every sizing decision backed by the same formulas used elsewhere in this tool."
-        actions={result && <Button variant="secondary" size="sm" icon={Download} onClick={() => window.print()}>Print / Save PDF</Button>}
+        actions={result && <Button variant="secondary" size="sm" icon={Printer} onClick={() => window.print()}>Print / Save PDF</Button>}
       />
 
       {prefilled && (

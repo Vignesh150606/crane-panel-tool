@@ -46,7 +46,7 @@ export default function AssistPanel() {
         onClick={() => navigate('/tutor')}
         aria-label="Open Engineering Tutor"
         className="no-print fixed z-40 cursor-pointer transition-colors
-                   bottom-20 right-4 w-16 h-16 rounded-full bg-copper shadow-2xl active:bg-copper/80
+                   bottom-[72px] right-4 w-14 h-14 rounded-full bg-copper shadow-2xl active:bg-copper/80
                    flex items-center justify-center
                    lg:bottom-6 lg:right-6 lg:w-auto lg:h-auto lg:rounded-full lg:bg-surface/95 lg:backdrop-blur-md
                    lg:border lg:border-steel lg:hover:border-copper/50 lg:flex lg:items-center lg:gap-2 lg:pl-2.5 lg:pr-3.5 lg:py-2.5"

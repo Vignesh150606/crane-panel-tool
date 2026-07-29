@@ -1,8 +1,8 @@
 const TONES = {
-  safe: 'bg-safe-dim text-safe border-safe/40',
-  danger: 'bg-danger-dim text-danger border-danger/40',
-  caution: 'bg-caution-dim text-amber border-amber/40',
-  info: 'bg-info-dim text-info border-info/40',
+  safe: 'bg-safe-dim/60 text-safe border-safe/40',
+  danger: 'bg-danger-dim/60 text-danger border-danger/40',
+  caution: 'bg-caution-dim/60 text-amber border-amber/40',
+  info: 'bg-info-dim/60 text-info border-info/40',
   neutral: 'bg-steel/40 text-text-muted border-steel',
 }
 
@@ -16,9 +16,10 @@ const DOT_TONES = {
 
 export default function Badge({ tone = 'neutral', dot = true, children, className = '' }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[0.7rem] font-semibold uppercase tracking-wide ${TONES[tone]} ${className}`}>
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${DOT_TONES[tone]}`} />}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-semibold uppercase tracking-wide whitespace-nowrap ${TONES[tone] || TONES.neutral} ${className}`}>
+      {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_TONES[tone] || DOT_TONES.neutral}`} />}
       {children}
     </span>
   )
 }
+

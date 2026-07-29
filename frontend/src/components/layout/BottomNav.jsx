@@ -27,7 +27,20 @@ const SECTIONS = [
 export default function BottomNav() {
   const location = useLocation()
   const [openSection, setOpenSection] = useState(null)
-  const completed = useProjectStore((s) => s.completedSteps())
+  const craneType = useProjectStore((s) => s.craneType)
+  const motors = useProjectStore((s) => s.motors)
+  const cableBusbar = useProjectStore((s) => s.cableBusbar)
+  const starDelta = useProjectStore((s) => s.starDelta)
+  const bom = useProjectStore((s) => s.bom)
+
+  const completed = {
+    crane: !!craneType,
+    load: !!motors,
+    cable: !!cableBusbar?.result,
+    circuit: !!starDelta?.result,
+    bom: !!bom?.result,
+  }
+
   const dragControls = useDragControls()
 
   const active = SECTIONS.find((s) => s.match(location.pathname))?.key
@@ -37,7 +50,7 @@ export default function BottomNav() {
   return (
     <>
       <nav
-        aria-label="Primary"
+        aria-label="Mobile navigation"
         className="no-print lg:hidden fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around
                    bg-ink/95 backdrop-blur border-t border-steel"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}

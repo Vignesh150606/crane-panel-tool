@@ -30,6 +30,7 @@ function AutoTextarea({ value, onChange, onSubmit, disabled, placeholder }) {
     <textarea
       ref={ref}
       value={value}
+      aria-label="Your question"
       onChange={(e) => onChange(e.target.value.slice(0, MAX_CHARS))}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmit() }
@@ -37,8 +38,8 @@ function AutoTextarea({ value, onChange, onSubmit, disabled, placeholder }) {
       placeholder={placeholder}
       disabled={disabled}
       rows={1}
-      className="flex-1 resize-none bg-inset border border-steel rounded-xl px-4 py-3.5 text-[0.95rem] text-text leading-relaxed
-                 placeholder:text-text-dim outline-none focus:border-copper/50 disabled:opacity-50 transition-colors"
+      className="flex-1 resize-none bg-inset border border-steel rounded-xl px-4 py-3.5 text-sm sm:text-base text-text leading-relaxed
+                 placeholder:text-text-dim outline-none focus:border-amber/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       style={{ maxHeight: MAX_TEXTAREA_HEIGHT }}
     />
   )

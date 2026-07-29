@@ -54,7 +54,7 @@ const MOTOR_META = {
 const TABS = [
   { key: 'overview', label: 'Overview', icon: Gauge },
   { key: 'components', label: 'Components', icon: Cog },
-  { key: 'why', label: 'Understand Why', icon: Lightbulb },
+  { key: 'why', label: 'How It Was Calculated', icon: Lightbulb },
   { key: 'recommendation', label: 'Recommendation', icon: Flag },
 ]
 

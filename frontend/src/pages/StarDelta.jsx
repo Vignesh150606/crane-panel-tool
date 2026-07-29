@@ -59,13 +59,18 @@ export default function StarDelta() {
         <Card>
           <NumberField label="Motor Power" value={hp} onChange={setHp} unit="HP" step={0.5} min={0.1} />
 
-          <label className="block text-xs text-text-muted mb-1.5 font-medium">Star-to-Delta Timer</label>
+          <label htmlFor="star-delta-timer" className="block text-xs text-text-muted mb-1.5 font-medium">Star-to-Delta Timer</label>
           <input
+            id="star-delta-timer"
             type="range" min="3" max="15" value={timer}
             onChange={(e) => setTimer(parseInt(e.target.value))}
             className="w-full accent-amber cursor-pointer"
           />
-          <div className="text-amber text-center mt-1 font-mono text-sm">{timer} seconds</div>
+          <div className="flex justify-between items-center text-xs text-text-dim font-mono mt-1">
+            <span>3s (Min)</span>
+            <span className="text-amber font-semibold text-sm">{timer} seconds</span>
+            <span>15s (Max)</span>
+          </div>
 
           {error && <div className="mt-3"><ErrorBanner message={error} onRetry={() => runCalc(hp, timer)} retrying={loading} /></div>}
 
