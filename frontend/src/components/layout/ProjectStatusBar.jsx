@@ -45,20 +45,21 @@ export default function ProjectStatusBar() {
         {crane && <span className="text-text-dim truncate max-w-[160px]">· {crane.fullName}</span>}
       </div>
 
-      <div className="hidden sm:flex items-center gap-2 ml-auto" aria-label="Workflow milestone completion">
+      <div className="hidden sm:flex items-center gap-3 ml-auto">
         {LEDS.map((led) => {
           const isDone = steps[led.key]
           return (
             <span
               key={led.key}
-              className="flex items-center gap-1 text-[0.7rem] text-text-dim"
+              className="flex items-center gap-1.5 text-xs"
               title={`${led.label}: ${isDone ? 'complete' : 'pending'}`}
             >
               <span
                 role="status"
                 aria-label={`${led.label} ${isDone ? 'complete' : 'pending'}`}
-                className={`w-2 h-2 rounded-full transition-colors ${isDone ? 'bg-safe shadow-[0_0_6px_var(--color-safe)]' : 'bg-steel-light'}`}
+                className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isDone ? 'bg-safe shadow-[0_0_6px_var(--color-safe)]' : 'bg-steel-light'}`}
               />
+              <span className={`font-medium ${isDone ? 'text-text-muted' : 'text-text-dim'}`}>{led.label}</span>
             </span>
           )
         })}

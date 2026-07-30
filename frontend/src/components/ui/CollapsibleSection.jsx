@@ -17,17 +17,17 @@ export default function CollapsibleSection({ title, subtitle, icon: Icon, defaul
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className={`border border-steel rounded-lg overflow-hidden bg-inset ${className}`}>
+    <div className={`border border-steel rounded-xl overflow-hidden bg-inset ${className}`}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-left cursor-pointer hover:bg-surface-hover transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer hover:bg-surface-hover transition-colors"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2 min-w-0">
-          {Icon && <Icon size={14} className="text-text-dim shrink-0" />}
+        <span className="flex items-center gap-2.5 min-w-0">
+          {Icon && <Icon size={15} className={`shrink-0 transition-colors ${open ? 'text-amber' : 'text-text-dim'}`} />}
           <span className="min-w-0">
-            <span className="text-sm font-medium text-text">{title}</span>
-            {subtitle && <span className="block text-xs text-text-dim truncate">{subtitle}</span>}
+            <span className="text-sm font-semibold text-text">{title}</span>
+            {subtitle && <span className="block text-xs text-text-dim mt-0.5 truncate">{subtitle}</span>}
           </span>
         </span>
         <span className="flex items-center gap-2 shrink-0">

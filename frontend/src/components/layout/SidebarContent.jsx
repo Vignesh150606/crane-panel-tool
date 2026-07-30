@@ -3,6 +3,7 @@ import { Check, HelpCircle, ArrowRight, History } from 'lucide-react'
 import { HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS, findNavItem } from '../../config/navigation'
 import { useProjectStore } from '../../store/projectStore'
 import { useUIStore } from '../../store/uiStore'
+import Badge from '../ui/Badge'
 
 function SectionLabel({ collapsed, children }) {
   if (collapsed) return <div className="h-px bg-steel mx-2 my-3" />
@@ -37,9 +38,9 @@ function Row({ to, icon: Icon, label, active, collapsed, onNavigate, badge, numb
       </span>
       {!collapsed && <span className="truncate flex-1">{label}</span>}
       {!collapsed && badge && (
-        <span className="shrink-0 text-xs font-semibold uppercase tracking-wide bg-safe-dim/80 text-safe border border-safe/40 rounded-full px-2 py-0.5">
+        <Badge tone="safe" dot={false} className="shrink-0 !py-0 !px-1.5 !text-[0.6rem]">
           {badge}
-        </span>
+        </Badge>
       )}
       {collapsed && (
         <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap rounded-md bg-surface border border-steel px-2.5 py-1 text-xs text-text opacity-0 shadow-lg z-50 transition-opacity duration-100 group-hover:opacity-100">

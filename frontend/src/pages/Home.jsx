@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2, LayoutDashboard } from 'lucide-react'
+import { ArrowRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2, LayoutDashboard, Info } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
 import { WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS, HANDBOOK_ITEM } from '../config/navigation'
 import PanelSchematic from '../components/illustrations/PanelSchematic'
@@ -21,7 +21,7 @@ export default function Home() {
       <section className="grid lg:grid-cols-[1fr_minmax(360px,440px)] gap-10 lg:gap-14 items-center py-6 lg:py-10">
         <div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
-            className="inline-flex items-center gap-2 rounded-full border border-steel bg-inset px-3 py-1 text-[0.7rem] font-medium text-text-muted mb-6">
+            className="inline-flex items-center gap-2 rounded-full border border-steel bg-inset px-3 py-1 text-xs font-medium text-text-muted mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-safe shadow-[0_0_6px_var(--color-safe)]" />
             IS/IEC-referenced · built on real panel-assembly experience
           </motion.div>
@@ -63,7 +63,7 @@ export default function Home() {
                   <Icon size={16} className="text-amber shrink-0 mt-0.5" strokeWidth={2} />
                   <div className="min-w-0">
                     <div className="text-text text-xs font-semibold leading-tight">{c.label}</div>
-                    <div className="text-text-dim text-[0.7rem] leading-tight mt-0.5">{c.sub}</div>
+                    <div className="text-text-dim text-xs leading-tight mt-0.5 opacity-70">{c.sub}</div>
                   </div>
                 </div>
               )
@@ -81,7 +81,7 @@ export default function Home() {
       </section>
 
       {/* ── Design Workflow ──────────────────────────────────────────── */}
-      <section className="pt-6 pb-4">
+      <section className="pt-6 pb-6">
         <div className="flex items-end justify-between gap-4 mb-5 flex-wrap">
           <div>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-text mb-1">Design Workflow</h2>
@@ -95,11 +95,14 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Divider ──────────────────────────────────────────────────── */}
+      <div className="border-t border-steel" />
+
       {/* ── Reference Tools ──────────────────────────────────────────── */}
-      <section className="pt-8 pb-4">
+      <section className="pt-8 pb-6">
         <div className="mb-5">
           <h2 className="font-display text-xl font-semibold text-text mb-1">Reference Tools</h2>
-          <p className="text-text-dim text-sm">Standalone calculators and simulators — use anytime, no setup needed.</p>
+          <p className="text-text-muted text-sm">Standalone calculators and simulators — use anytime, no setup needed.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {REFERENCE_ITEMS.map((f, i) => (
@@ -109,11 +112,14 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Divider ──────────────────────────────────────────────────── */}
+      <div className="border-t border-steel" />
+
       {/* ── Training Modules ─────────────────────────────────────────── */}
-      <section className="pt-8 pb-4">
+      <section className="pt-8 pb-6">
         <div className="mb-5">
           <h2 className="font-display text-xl font-semibold text-text mb-1">Industrial Training Platform</h2>
-          <p className="text-text-dim text-sm">Practice on a realistic panel, diagnose live faults, and run a full commissioning checklist.</p>
+          <p className="text-text-muted text-sm">Practice on a realistic panel, diagnose live faults, and run a full commissioning checklist.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {TRAINING_ITEMS.map((f, i) => (
@@ -122,10 +128,11 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="border border-steel rounded-xl px-5 py-4 text-center mt-10 mb-4">
-        <p className="text-text-dim text-sm">
+      <div className="border border-steel rounded-xl px-5 py-4 mt-4 mb-4 flex items-start gap-3">
+        <Info size={16} className="text-text-dim shrink-0 mt-0.5" />
+        <p className="text-text-muted text-sm leading-relaxed">
           Built with engineering data from real EOT crane panel assembly · Relay interlock logic based on
-          industrial standards · Component ratings follow IS/IEC standards
+          industrial standards · Component ratings follow IS/IEC standards.
         </p>
       </div>
     </div>

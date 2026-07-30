@@ -34,7 +34,7 @@ export default function EngineeringStatus({ label, status }) {
         />
       </div>
 
-      <div className="flex justify-between text-[0.7rem] text-text-dim font-mono mb-1.5">
+      <div className="flex justify-between text-xs text-text-dim font-mono mb-1.5 gap-2 flex-wrap">
         <span>Required: {status.required_rating}</span>
         <span>Selected: {status.selected_rating}</span>
         <span>Margin: {status.safety_margin_pct}%</span>

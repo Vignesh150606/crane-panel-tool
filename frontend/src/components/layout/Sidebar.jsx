@@ -27,7 +27,7 @@ export default function Sidebar({ onOpenSearch }) {
           {!collapsed && (
             <div className="leading-none min-w-0">
               <div className="font-display font-semibold text-sm text-text truncate">Crane Panel</div>
-              <div className="text-[0.65rem] text-text-dim tracking-wide">DESIGN TOOL</div>
+              <div className="text-[0.65rem] text-text-dim tracking-widest uppercase font-medium">Design Tool</div>
             </div>
           )}
         </Link>

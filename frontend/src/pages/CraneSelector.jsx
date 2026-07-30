@@ -66,24 +66,26 @@ export default function CraneSelector() {
               key={cat}
               onClick={() => setFilter(cat)}
               className={`px-3.5 py-1.5 rounded-full text-sm border transition-colors cursor-pointer
-                ${filter === cat ? 'bg-amber text-ink border-amber font-semibold' : 'border-steel text-text-muted hover:border-steel-light'}`}
+                ${filter === cat ? 'bg-amber text-ink border-amber font-semibold' : 'border-steel text-text-muted hover:border-steel-light hover:text-text'}`}
             >
               {cat}
             </button>
           ))}
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex rounded-lg border border-steel overflow-hidden shrink-0">
           <button
             onClick={() => setView('grid')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border transition-colors cursor-pointer
-              ${view === 'grid' ? 'border-amber text-amber bg-surface' : 'border-steel text-text-dim hover:text-text-muted'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border-r border-steel transition-colors cursor-pointer
+              ${view === 'grid' ? 'bg-amber/15 text-amber font-medium' : 'text-text-dim hover:text-text hover:bg-surface-hover'}`}
+            aria-pressed={view === 'grid'}
           >
             <Grid3x3 size={14} /> Grid
           </button>
           <button
             onClick={() => setView('compare')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border transition-colors cursor-pointer
-              ${view === 'compare' ? 'border-amber text-amber bg-surface' : 'border-steel text-text-dim hover:text-text-muted'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors cursor-pointer
+              ${view === 'compare' ? 'bg-amber/15 text-amber font-medium' : 'text-text-dim hover:text-text hover:bg-surface-hover'}`}
+            aria-pressed={view === 'compare'}
           >
             <Columns3 size={14} /> Compare
           </button>
