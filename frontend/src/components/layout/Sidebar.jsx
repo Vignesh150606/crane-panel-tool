@@ -37,6 +37,7 @@ export default function Sidebar({ onOpenSearch }) {
         <Tooltip label={collapsed ? 'Search (Ctrl K)' : null} placement="right" className="w-full flex">
           <button
             onClick={onOpenSearch}
+            aria-label="Search"
             className={`w-full flex items-center gap-2 rounded-lg border border-steel bg-inset text-text-dim hover:text-text hover:border-steel-light transition-colors cursor-pointer text-sm
               ${collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-2'}`}
           >

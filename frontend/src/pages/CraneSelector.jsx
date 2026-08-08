@@ -163,7 +163,7 @@ function DetailPanel({ crane, onClose, onContinue }) {
           <h2 className="font-display text-amber text-xl font-bold">{crane.fullName}</h2>
           <p className="text-text-dim mt-1 text-sm">{crane.description}</p>
         </div>
-        <button onClick={onClose} className="text-text-dim hover:text-text cursor-pointer">
+        <button onClick={onClose} className="text-text-dim hover:text-text cursor-pointer" aria-label="Close crane details">
           <X size={20} />
         </button>
       </div>

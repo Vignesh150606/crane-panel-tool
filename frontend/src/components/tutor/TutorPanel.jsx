@@ -134,6 +134,7 @@ export default function TutorPanel() {
                 <button
                   onClick={() => setOpen(false)}
                   className="p-1.5 rounded-md text-text-dim hover:text-text hover:bg-surface-hover transition-colors cursor-pointer"
+                  aria-label="Close tutor panel"
                 >
                   <X size={16} />
                 </button>

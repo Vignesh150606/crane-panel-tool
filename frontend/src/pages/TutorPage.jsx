@@ -233,7 +233,7 @@ export default function TutorPage() {
         {error && (
           <div className="flex items-start justify-between gap-2 text-xs text-danger bg-danger-dim/40 border border-danger/30 rounded-lg px-3 py-2">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="shrink-0 cursor-pointer"><X size={13} /></button>
+            <button onClick={() => setError(null)} className="shrink-0 cursor-pointer" aria-label="Dismiss error"><X size={13} /></button>
           </div>
         )}
       </div>

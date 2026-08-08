@@ -51,7 +51,7 @@ export function ToastProvider({ children }) {
               >
                 <Icon size={16} className="shrink-0" />
                 <span className="text-sm text-text flex-1">{t.message}</span>
-                <button onClick={() => remove(t.id)} className="text-text-dim hover:text-text cursor-pointer">
+                <button onClick={() => remove(t.id)} className="text-text-dim hover:text-text cursor-pointer" aria-label="Dismiss notification">
                   <X size={14} />
                 </button>
               </motion.div>

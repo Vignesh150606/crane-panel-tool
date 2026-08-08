@@ -3,6 +3,38 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.1.2 — Accessible-name audit (Phase 6, cont.)
+
+Requested reference for this round: a Mobbin gallery link for Dovetail (the
+research-repository SaaS tool). Mobbin blocks non-authenticated/bot fetches,
+so the gallery itself couldn't be opened; image search for the actual product
+UI also came back thin. What was verifiable and used instead: Dovetail's own
+engineering blog post on their real navigation/IA redesign, which states two
+concrete, checkable principles — "every action now has a label, instead of
+just an icon" and clearer plain-language naming over abstract internal terms.
+This app's dark industrial "Rating Plate" language stays as-is (Dovetail is a
+light-mode research tool — copying its visual style here would be the exact
+generic-reskin mistake the original brief warned against); the icon-label
+principle is the one piece that's genuinely tool-agnostic and worth checking.
+
+- Audited every icon-only control app-wide for an accessible name. Fixed 5
+  that had none: the tutor page's error-dismiss button, the toast
+  dismiss button, the crane detail panel's close button, the tutor panel's
+  close button, and the sidebar's search button in its collapsed (icon-rail)
+  state — that last one already had a hover tooltip, but `Tooltip.jsx`'s own
+  doc comment says outright that a tooltip is "a visual aid, not a
+  replacement for the trigger's own accessible name," which this instance
+  wasn't following.
+- Checked navigation labels against Dovetail's "rename abstract jargon"
+  principle — nothing needed changing; the existing labels (Load Calculator,
+  BOM Generator, Star-Delta Calculator, etc.) are already plain, domain-
+  standard terms for this audience, not internal/abstract naming.
+- Checked `EmptyState` usage against the "empty states should be
+  actionable" idea — all 4 current usages sit directly beside their own
+  trigger (the form or list that fills them), so no dead-end empty state
+  needed a CTA added; left the component alone rather than adding one for
+  its own sake.
+
 ## v1.1.1 — Density & hierarchy audit (Phase 6)
 
 Scope note: this pass was requested as a full ground-up UI/UX transformation.
