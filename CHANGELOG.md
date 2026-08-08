@@ -3,6 +3,54 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.1.3 — Cut repeated result-page text (Phase 7)
+
+Problem: result-heavy pages built on `EngineeringStatus` (Contactor/MPCB/Cable
+margin cards) were showing a full explanatory sentence on every single card,
+even though that sentence only has 4 possible variants (undersized / adequate
+/ optimal / oversized) — so it just repeated verbatim every time the status
+repeated. BOM Generator's 3 motor cards × 2 components each meant the same 4
+sentences printed 6 times; Load Calculator's Components tab printed them 9
+times. Fixed at the component level so every consuming page inherits it —
+no page-specific patches. Numbers were never touched, only the boilerplate
+prose explaining them.
+
+- `EngineeringStatus.jsx`: removed the per-instance `sizing_status_description`
+  sentence entirely (the API still returns it; the component just no longer
+  renders it). Collapsed the `Required: X` / `Selected: Y` / `Margin: Z%`
+  three-row block into one line — the margin bar already shows the gap
+  visually, so the three labels didn't need a full row each. Added a new
+  `EngineeringStatusLegend` export: one shared line explaining what the 4
+  badge colors mean, meant to be rendered once per page next to a group of
+  cards, not once per card.
+- BOM Generator (`pages/BOMGenerator.jsx`): added the shared legend once,
+  above the 3-motor card grid — replaces 6 repeated sentences (3 motors ×
+  Contactor/MPCB) with 1 legend line.
+- Load Calculator (`pages/LoadCalculator.jsx`, Components tab): added the
+  shared legend once above the 3-motor grid, and trimmed the existing intro
+  paragraph's second sentence ("Each block's margin bar shows how far...")
+  since the legend now covers that — replaces 9 repeated sentences (3 motors
+  × Contactor/MPCB/Cable) with 1 legend line.
+- Nameplate Calculator (`pages/NameplateCalculator.jsx`): added the shared
+  legend once above its Contactor/MPCB/Cable row — replaces 3 repeated
+  sentences with 1 legend line.
+- Cable & Busbar (`pages/CableBusbar.jsx`): component-level sentence removal
+  and number-row consolidation apply here too (it uses `EngineeringStatus`),
+  but deliberately did **not** add the legend — this page only ever shows one
+  status card, so there's no repetition to fix and a 4-item legend for a
+  single card would be new clutter on a page that was already lean.
+- Audited every other page for the same "small fixed set of sentences
+  repeating verbatim across instances" pattern (Crane Selector, Fault
+  Diagnosis, Challenge Mode, Virtual Commissioning, Star-Delta, Control/Power
+  Circuit, Panel Simulator/Explorer/Layout, Project Report, Project
+  Dashboard, Home, Handbook, Tutor). Found nothing else matching it — every
+  other repeated-looking block turned out to be genuinely unique per-instance
+  content (fault descriptions, formula explanations, checklist items), not
+  duplicate boilerplate — so left unchanged rather than manufacturing
+  changes on pages that were already lean.
+- No backend, calculation, or validation files touched. `npm run lint`,
+  `npm run build`, and `ssr-smoke-test.mjs` (19/19 pages) all clean.
+
 ## v1.1.2 — Accessible-name audit (Phase 6, cont.)
 
 Requested reference for this round: a Mobbin gallery link for Dovetail (the

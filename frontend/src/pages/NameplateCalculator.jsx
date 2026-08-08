@@ -9,7 +9,7 @@ import NumberField from '../components/ui/NumberField'
 import Toggle from '../components/ui/Toggle'
 import Button from '../components/ui/Button'
 import StatPlate from '../components/ui/StatPlate'
-import EngineeringStatus from '../components/ui/EngineeringStatus'
+import EngineeringStatus, { EngineeringStatusLegend } from '../components/ui/EngineeringStatus'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import EmptyState from '../components/ui/EmptyState'
@@ -124,6 +124,7 @@ export default function NameplateCalculator() {
                   <StatPlate label="Overload Setting" value={result.overload_setting} unit="A" tone="amber" />
                   <StatPlate label="Cable Size" value={result.cable_size} unit="mm²" tone={result.status.cable.sizing_status === 'undersized' ? 'danger' : 'info'} />
                 </div>
+                <EngineeringStatusLegend className="mb-2.5" />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <EngineeringStatus label="Contactor" status={result.status.contactor} />
                   <EngineeringStatus label="MPCB" status={result.status.mpcb} />

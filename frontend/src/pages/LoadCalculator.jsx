@@ -18,7 +18,7 @@ import Toggle from '../components/ui/Toggle'
 import Button from '../components/ui/Button'
 import StatPlate from '../components/ui/StatPlate'
 import Badge from '../components/ui/Badge'
-import EngineeringStatus from '../components/ui/EngineeringStatus'
+import EngineeringStatus, { EngineeringStatusLegend } from '../components/ui/EngineeringStatus'
 import AssumedVsComputed from '../components/ui/AssumedVsComputed'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
@@ -368,11 +368,11 @@ export default function LoadCalculator() {
 
                   {activeTab === 'components' && (
                     <div>
-                      <p className="text-text-dim text-xs mb-4 max-w-2xl">
+                      <p className="text-text-dim text-xs mb-3 max-w-2xl">
                         Every rating below already carries the crane-duty margin — IEC 60947-4-1 AC-3 practice for repeated
-                        start/stop and locked-rotor current, not a general-purpose selection. Each block's margin bar shows
-                        how far the selected rating sits above the minimum requirement.
+                        start/stop and locked-rotor current, not a general-purpose selection.
                       </p>
+                      <EngineeringStatusLegend className="mb-4" />
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         {motorKeys.map((key) => {
                           const data = results.motors[key]

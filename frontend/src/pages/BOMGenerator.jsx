@@ -7,7 +7,7 @@ import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
 import NumberField from '../components/ui/NumberField'
 import Button from '../components/ui/Button'
-import EngineeringStatus from '../components/ui/EngineeringStatus'
+import EngineeringStatus, { EngineeringStatusLegend } from '../components/ui/EngineeringStatus'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import EmptyState from '../components/ui/EmptyState'
@@ -103,6 +103,7 @@ export default function BOMGenerator() {
         <Card><Skeleton rows={8} className="h-6" /></Card>
       ) : result ? (
         <>
+          <EngineeringStatusLegend className="mb-3" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
             {Object.entries(result.per_motor).map(([name, data]) => (
               <Card key={name} variant="computed">
