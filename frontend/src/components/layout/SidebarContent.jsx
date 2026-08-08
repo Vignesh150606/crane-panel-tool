@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Check, HelpCircle, ArrowRight, History } from 'lucide-react'
+import { Check, History } from 'lucide-react'
 import { HOME_ITEM, DASHBOARD_ITEM, HANDBOOK_ITEM, WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS, findNavItem } from '../../config/navigation'
 import { useProjectStore } from '../../store/projectStore'
 import { useUIStore } from '../../store/uiStore'
@@ -116,20 +116,6 @@ export default function SidebarContent({ collapsed = false, onNavigate }) {
       {TRAINING_ITEMS.map((item) => (
         <Row key={item.path} to={item.path} icon={item.icon} label={item.label} active={isActive(item.path)} collapsed={collapsed} onNavigate={onNavigate} badge={item.isNew ? 'New' : undefined} />
       ))}
-
-      {!collapsed && (
-        <div className="mt-5 rounded-xl border border-steel bg-inset p-3.5">
-          <div className="flex items-center gap-1.5 text-text text-xs font-semibold mb-1.5">
-            <HelpCircle size={13} className="text-amber" /> Need help?
-          </div>
-          <p className="text-text-dim text-[0.75rem] leading-relaxed mb-2.5">
-            Explore formulas, standards, symbols and engineering concepts in the Engineering Handbook.
-          </p>
-          <Link to="/handbook" onClick={onNavigate} className="inline-flex items-center gap-1 text-amber text-xs font-semibold hover:gap-1.5 transition-all">
-            Open Handbook <ArrowRight size={12} />
-          </Link>
-        </div>
-      )}
     </nav>
   )
 }

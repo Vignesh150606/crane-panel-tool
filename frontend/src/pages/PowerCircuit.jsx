@@ -152,11 +152,10 @@ export default function PowerCircuit() {
               <Ruler size={13} /> Wiring Rule
             </div>
             <p className="text-text-dim text-xs leading-relaxed">
-              Power and control wiring routed through separate cable ducts.
-              100mm gap between ducts, 75mm between contactors — panel-builder
-              practice, not a value calculated by this tool. See Panel Layout
+              Power and control wiring routed through separate cable ducts —
+              100mm gap between ducts, 75mm between contactors. Panel-builder
+              practice, not a value calculated by this tool; see Panel Layout
               for the full caveat on where these figures come from.
-              Phase reversal at reverse contactor output.
             </p>
           </Card>
         </div>

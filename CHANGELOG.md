@@ -3,6 +3,41 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.1.1 — Density & hierarchy audit (Phase 6)
+
+Scope note: this pass was requested as a full ground-up UI/UX transformation.
+Auditing the actual app first (every page, the shared component library, the
+"Rating Plate" token system) found it already implementing almost everything
+that brief asks for — FormulaExplainer's 4-tier progressive disclosure,
+CollapsibleSection, the Phase 5 sidebar/AssistPanel work, ProjectDashboard's
+answer-first hero. So instead of discarding a working, purpose-built design
+system for a generic one, this phase did a targeted cleanup + density pass
+and left the rest alone rather than manufacturing churn. No visual/browser
+tooling was available this session (no Playwright, unlike Phase 1/4/5) — this
+was verified with `npm run lint`, `npm run build`, and `ssr-smoke-test.mjs`
+(19/19 pages), not rendered screenshots. A live visual pass is still worth
+doing before calling this final.
+
+- Deleted 4 dead files the codebase had accumulated across earlier phases:
+  `layout/PageHeader.jsx` and `WorkflowStepper.jsx` — both superseded per
+  the Phase 5 notes above, but never actually removed from the tree — plus
+  `Navbar.jsx` and `ContextPanel.jsx`, both fully unreferenced.
+- Removed a "Need help?" sidebar card that duplicated the Handbook link
+  already pinned under Quick Access.
+- Home: the Reference Tools + Training Modules sections (8 equal-weight
+  cards, competing for attention with the primary 7-step workflow grid)
+  are now two compact list panels — same content, a fraction of the visual
+  weight. Workflow cards are still the dominant element on the page.
+- Cable & Busbar page: the Bus Bar vs. Stretch Wire recommendation now
+  appears before the reasoning that supports it, not after; the size
+  comparison chart, cross-section diagram, and formula detail on both
+  cards moved behind `CollapsibleSection` instead of stacking under the
+  result by default.
+- Minor copy fix on Power Circuit (a stray sentence about phase reversal
+  had ended up appended to an unrelated paragraph about duct spacing).
+
+*Full detail: see the assistant's summary in this session.*
+
 ## v1.1.0 — Structural IA redesign (Phase 5)
 *Full detail: `REDESIGN_NOTES.md`, "Phase 5"*
 

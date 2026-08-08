@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ReferenceLine,
 } from 'recharts'
-import { Cable, Zap, ArrowRight, BookOpen, ChevronDown, Factory, AlertTriangle } from 'lucide-react'
+import { Cable, Zap, ArrowRight, BookOpen, ChevronDown, Factory, AlertTriangle, BarChart3, GitCompare } from 'lucide-react'
 
 import PageHeader, { PrefillBanner } from '../components/ui/PageHeader'
 import Card from '../components/ui/Card'
@@ -15,6 +15,7 @@ import EngineeringStatus from '../components/ui/EngineeringStatus'
 import FormulaExplainer from '../components/ui/FormulaExplainer'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import Skeleton from '../components/ui/Skeleton'
+import CollapsibleSection from '../components/ui/CollapsibleSection'
 import { useToast } from '../hooks/useToast'
 import { calcCableBusbar } from '../api/calculations'
 import { validateFields, hasErrors, BOUNDS } from '../lib/validate'
@@ -148,70 +149,70 @@ export default function CableBusbar() {
 
               <EngineeringStatus label="Cable sizing margin" status={result.status.cable} />
 
-              {/* Visual cable comparison — why this size, not a smaller one */}
-              <div className="mt-4">
-                <div className="text-[0.65rem] uppercase tracking-wide text-text-dim mb-1.5">Standard Sizes Compared (mm²)</div>
-                <ResponsiveContainer width="100%" height={170}>
-                  <BarChart data={comparisonData} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-steel)" vertical={false} />
-                    <XAxis dataKey="label" stroke="var(--color-text-dim)" fontSize={11} tickLine={false} axisLine={{ stroke: 'var(--color-steel)' }} />
-                    <YAxis stroke="var(--color-text-dim)" fontSize={10} tickLine={false} axisLine={false} width={34} />
-                    <Tooltip content={<CableTooltip />} cursor={{ fill: 'var(--color-steel)', opacity: 0.2 }} />
-                    <ReferenceLine
-                      y={requiredCapacity}
-                      stroke="var(--color-danger)"
-                      strokeDasharray="4 3"
-                      label={{ value: 'Required', position: 'insideTopRight', fill: 'var(--color-danger)', fontSize: 10 }}
-                    />
-                    <Bar dataKey="capacity" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                      {comparisonData.map((d, i) => (
-                        <Cell
-                          key={i}
-                          fill={d.selected ? 'var(--color-amber)' : d.adequate ? 'var(--color-steel-light)' : 'var(--color-danger-dim)'}
-                          stroke={d.selected ? 'var(--color-amber)' : 'transparent'}
-                          strokeWidth={d.selected ? 2 : 0}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                <div className="flex items-center gap-3 mt-1 text-[0.65rem] text-text-dim">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber inline-block" /> Selected</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-steel-light inline-block" /> Also adequate</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-danger-dim inline-block" /> Below requirement</span>
+              {/* Why this size, not a smaller one — reference detail that
+                  supports the result above rather than the result itself,
+                  so it stays one click away instead of stacking three more
+                  visuals under the answer by default. */}
+              <CollapsibleSection title="Compare sizes & full reasoning" subtitle="Standard sizes, cross-section, and the formulas" icon={BarChart3} className="mt-4">
+                <div className="pt-2">
+                  <div className="text-[0.65rem] uppercase tracking-wide text-text-dim mb-1.5">Standard Sizes Compared (mm²)</div>
+                  <ResponsiveContainer width="100%" height={170}>
+                    <BarChart data={comparisonData} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-steel)" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--color-text-dim)" fontSize={11} tickLine={false} axisLine={{ stroke: 'var(--color-steel)' }} />
+                      <YAxis stroke="var(--color-text-dim)" fontSize={10} tickLine={false} axisLine={false} width={34} />
+                      <Tooltip content={<CableTooltip />} cursor={{ fill: 'var(--color-steel)', opacity: 0.2 }} />
+                      <ReferenceLine
+                        y={requiredCapacity}
+                        stroke="var(--color-danger)"
+                        strokeDasharray="4 3"
+                        label={{ value: 'Required', position: 'insideTopRight', fill: 'var(--color-danger)', fontSize: 10 }}
+                      />
+                      <Bar dataKey="capacity" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                        {comparisonData.map((d, i) => (
+                          <Cell
+                            key={i}
+                            fill={d.selected ? 'var(--color-amber)' : d.adequate ? 'var(--color-steel-light)' : 'var(--color-danger-dim)'}
+                            stroke={d.selected ? 'var(--color-amber)' : 'transparent'}
+                            strokeWidth={d.selected ? 2 : 0}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="flex items-center gap-3 mt-1 text-[0.65rem] text-text-dim">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber inline-block" /> Selected</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-steel-light inline-block" /> Also adequate</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-danger-dim inline-block" /> Below requirement</span>
+                  </div>
+
+                  <div className="mt-4 bg-surface rounded-lg p-4 text-center border border-steel">
+                    <div className="text-text-dim text-xs mb-2">Cable Cross Section (to relative scale)</div>
+                    <svg width="100" height="100" viewBox="0 0 100 100" className="mx-auto">
+                      <circle cx="50" cy="50" r={Math.min(45, 10 + result.cable_size)} fill="color-mix(in srgb, var(--color-amber) 15%, transparent)" stroke="var(--color-amber)" strokeWidth="2" />
+                      <text x="50" y="55" textAnchor="middle" fill="var(--color-amber)" fontSize="14" fontWeight="bold">{result.cable_size}</text>
+                      <text x="50" y="70" textAnchor="middle" fill="var(--color-text-dim)" fontSize="9">mm²</text>
+                    </svg>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <FormulaExplainer title="Why this cable size?" explanation={result.explanations.cable} />
+                    <FormulaExplainer title="Why this voltage drop?" explanation={result.explanations.voltage_drop} />
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-4 bg-inset rounded-lg p-4 text-center border border-steel">
-                <div className="text-text-dim text-xs mb-2">Cable Cross Section (to relative scale)</div>
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r={Math.min(45, 10 + result.cable_size)} fill="color-mix(in srgb, var(--color-amber) 15%, transparent)" stroke="var(--color-amber)" strokeWidth="2" />
-                  <text x="50" y="55" textAnchor="middle" fill="var(--color-amber)" fontSize="14" fontWeight="bold">{result.cable_size}</text>
-                  <text x="50" y="70" textAnchor="middle" fill="var(--color-text-dim)" fontSize="9">mm²</text>
-                </svg>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <FormulaExplainer title="Why this cable size?" explanation={result.explanations.cable} />
-                <FormulaExplainer title="Why this voltage drop?" explanation={result.explanations.voltage_drop} />
-              </div>
+              </CollapsibleSection>
             </motion.div>
           </Card>
 
-          {/* ── Bus Bar vs Stretch Wire ── */}
+          {/* ── Bus Bar vs Stretch Wire ──
+              Answer first: the recommendation sits directly under the
+              title so it reads in one glance. The decision flow, the
+              side-by-side trade-offs, and the standard reference are all
+              support for that answer, not the answer itself — collapsed
+              by default. */}
           <Card>
             <h2 className="font-display text-amber font-semibold mb-4">Bus Bar vs. Stretch Wire</h2>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {/* Decision flow — the actual logic, laid out step by step */}
-              <div className="mb-4">
-                <div className="text-[0.65rem] uppercase tracking-wide text-text-dim mb-2">Selection Flow</div>
-                <BusbarDecisionFlow
-                  travelLength={inputs.travelLength}
-                  threshold={result.busbar_span_threshold_m}
-                  recommendation={result.recommendation}
-                />
-              </div>
-
               <div className={`p-4 rounded-lg border-2 mb-4 ${result.recommendation === 'busbar' ? 'border-safe bg-safe-dim/30' : 'border-info bg-info-dim/30'}`}>
                 <div className={`font-bold text-lg mb-1.5 ${result.recommendation === 'busbar' ? 'text-safe' : 'text-info'}`}>
                   Recommended: {result.recommendation === 'busbar' ? 'Bus Bar System' : 'Stretch Wire'}
@@ -223,55 +224,68 @@ export default function CableBusbar() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-inset rounded-lg p-3 border border-steel">
-                  <div className="text-info font-semibold text-sm mb-2">Stretch Wire</div>
-                  <ul className="text-text-dim text-xs leading-relaxed pl-4 list-disc space-y-0.5">
-                    <li>Length = 1.5 x span = {result.stretch_wire_length}m</li>
-                    <li>Lower upfront cost</li>
-                    <li>Sag affects safety</li>
-                    <li>Mechanical wear over time</li>
-                  </ul>
-                </div>
-                <div className="bg-inset rounded-lg p-3 border border-steel">
-                  <div className="text-safe font-semibold text-sm mb-2">Bus Bar</div>
-                  <ul className="text-text-dim text-xs leading-relaxed pl-4 list-disc space-y-0.5">
-                    <li>Rigid Cu/Al conductors</li>
-                    <li>Spring-loaded collector shoes</li>
-                    <li>No sag, no wear</li>
-                    <li>Higher install cost, low maintenance</li>
-                  </ul>
-                </div>
-              </div>
+              <CollapsibleSection title="See the decision logic" subtitle="Selection flow, trade-offs, and the standard reference" icon={GitCompare}>
+                <div className="pt-2">
+                  <div className="mb-4">
+                    <div className="text-[0.65rem] uppercase tracking-wide text-text-dim mb-2">Selection Flow</div>
+                    <BusbarDecisionFlow
+                      travelLength={inputs.travelLength}
+                      threshold={result.busbar_span_threshold_m}
+                      recommendation={result.recommendation}
+                    />
+                  </div>
 
-              <svg width="100%" height="60" viewBox="0 0 300 60" className="mb-4">
-                {result.recommendation === 'busbar' ? (
-                  <>
-                    <motion.rect initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.5 }} x="20" y="25" width="260" height="6" fill="var(--color-safe)" style={{ transformOrigin: '20px 0px' }} />
-                    <rect x="140" y="15" width="8" height="15" fill="var(--color-text-muted)" />
-                    <rect x="135" y="30" width="18" height="10" fill="var(--color-text-dim)" rx="2" />
-                    <text x="150" y="55" textAnchor="middle" fill="var(--color-text-dim)" fontSize="9">Collector shoe on rigid busbar</text>
-                  </>
-                ) : (
-                  <>
-                    <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6 }} d="M20 25 Q150 50 280 25" stroke="var(--color-info)" strokeWidth="3" fill="none" />
-                    <text x="150" y="55" textAnchor="middle" fill="var(--color-text-dim)" fontSize="9">Stretch wire with characteristic sag</text>
-                  </>
-                )}
-              </svg>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-surface rounded-lg p-3 border border-steel">
+                      <div className="text-info font-semibold text-sm mb-2">Stretch Wire</div>
+                      <ul className="text-text-dim text-xs leading-relaxed pl-4 list-disc space-y-0.5">
+                        <li>Length = 1.5 x span = {result.stretch_wire_length}m</li>
+                        <li>Lower upfront cost</li>
+                        <li>Sag affects safety</li>
+                        <li>Mechanical wear over time</li>
+                      </ul>
+                    </div>
+                    <div className="bg-surface rounded-lg p-3 border border-steel">
+                      <div className="text-safe font-semibold text-sm mb-2">Bus Bar</div>
+                      <ul className="text-text-dim text-xs leading-relaxed pl-4 list-disc space-y-0.5">
+                        <li>Rigid Cu/Al conductors</li>
+                        <li>Spring-loaded collector shoes</li>
+                        <li>No sag, no wear</li>
+                        <li>Higher install cost, low maintenance</li>
+                      </ul>
+                    </div>
+                  </div>
 
-              <Card variant="inset" padding="sm" className="mb-4">
-                <div className="flex items-center gap-1.5 text-amber font-semibold text-xs mb-2">
-                  <Factory size={13} /> Industrial Notes
+                  <svg width="100%" height="60" viewBox="0 0 300 60" className="mb-4">
+                    {result.recommendation === 'busbar' ? (
+                      <>
+                        <motion.rect initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.5 }} x="20" y="25" width="260" height="6" fill="var(--color-safe)" style={{ transformOrigin: '20px 0px' }} />
+                        <rect x="140" y="15" width="8" height="15" fill="var(--color-text-muted)" />
+                        <rect x="135" y="30" width="18" height="10" fill="var(--color-text-dim)" rx="2" />
+                        <text x="150" y="55" textAnchor="middle" fill="var(--color-text-dim)" fontSize="9">Collector shoe on rigid busbar</text>
+                      </>
+                    ) : (
+                      <>
+                        <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6 }} d="M20 25 Q150 50 280 25" stroke="var(--color-info)" strokeWidth="3" fill="none" />
+                        <text x="150" y="55" textAnchor="middle" fill="var(--color-text-dim)" fontSize="9">Stretch wire with characteristic sag</text>
+                      </>
+                    )}
+                  </svg>
+
+                  <Card variant="inset" padding="sm" className="mb-4">
+                    <div className="flex items-center gap-1.5 text-amber font-semibold text-xs mb-2">
+                      <Factory size={13} /> Industrial Notes
+                    </div>
+                    <ul className="text-text-dim text-xs leading-relaxed pl-4 list-disc space-y-1">
+                      <li>Busbar collector shoes ride the rail under spring tension — continuous contact, no sag, per IEC 61439-6.</li>
+                      <li>Stretch wire needs periodic inspection for insulation wear near the festoon trolley flex points.</li>
+                      <li>Below {result.busbar_span_threshold_m}m, busbar's install cost rarely pays back against stretch wire's simplicity.</li>
+                    </ul>
+                  </Card>
+
+                  <FormulaExplainer title="Why busbar vs. stretch wire?" explanation={result.explanations.busbar} />
                 </div>
-                <ul className="text-text-dim text-xs leading-relaxed pl-4 list-disc space-y-1">
-                  <li>Busbar collector shoes ride the rail under spring tension — continuous contact, no sag, per IEC 61439-6.</li>
-                  <li>Stretch wire needs periodic inspection for insulation wear near the festoon trolley flex points.</li>
-                  <li>Below {result.busbar_span_threshold_m}m, busbar's install cost rarely pays back against stretch wire's simplicity.</li>
-                </ul>
-              </Card>
-
-              <FormulaExplainer title="Why busbar vs. stretch wire?" explanation={result.explanations.busbar} />
+              </CollapsibleSection>
             </motion.div>
           </Card>
         </div>

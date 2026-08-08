@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2, LayoutDashboard, Info } from 'lucide-react'
+import { ArrowRight, ChevronRight, ShieldCheck, BookOpenCheck, Radio, FileOutput, Gamepad2, LayoutDashboard } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
 import { WORKFLOW_ITEMS, REFERENCE_ITEMS, TRAINING_ITEMS, HANDBOOK_ITEM } from '../config/navigation'
 import PanelSchematic from '../components/illustrations/PanelSchematic'
@@ -98,43 +98,36 @@ export default function Home() {
       {/* ── Divider ──────────────────────────────────────────────────── */}
       <div className="border-t border-steel" />
 
-      {/* ── Reference Tools ──────────────────────────────────────────── */}
+      {/* ── More tools ────────────────────────────────────────────────
+          Reference calculators, the Handbook, and the training modules
+          used to be two more full card grids (8 equal-weight cards) —
+          visually competing with the primary 7-step workflow above for
+          the same attention. They're all still one click away, just as a
+          compact, quieter list now: the workflow is what a first-time
+          visitor should register first; everything below is "also
+          available", not "equally important". */}
       <section className="pt-8 pb-6">
         <div className="mb-5">
-          <h2 className="font-display text-xl font-semibold text-text mb-1">Reference Tools</h2>
-          <p className="text-text-muted text-sm">Standalone calculators and simulators — use anytime, no setup needed.</p>
+          <h2 className="font-display text-xl font-semibold text-text mb-1">More tools</h2>
+          <p className="text-text-muted text-sm">Standalone calculators, reference and training — use anytime, in any order.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {REFERENCE_ITEMS.map((f, i) => (
-            <FeatureCard key={f.path} feature={f} delay={i * 0.03} />
-          ))}
-          <FeatureCard feature={{ ...HANDBOOK_ITEM, isHandbook: true }} delay={REFERENCE_ITEMS.length * 0.03} />
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-steel bg-surface divide-y divide-steel/70 overflow-hidden">
+            {REFERENCE_ITEMS.map((item, i) => (
+              <ToolRow key={item.path} item={item} delay={i * 0.02} />
+            ))}
+          </div>
+          <div className="rounded-xl border border-steel bg-surface divide-y divide-steel/70 overflow-hidden">
+            <ToolRow item={HANDBOOK_ITEM} delay={0} />
+            {TRAINING_ITEMS.map((item, i) => (
+              <ToolRow key={item.path} item={item} delay={(i + 1) * 0.02} />
+            ))}
+          </div>
         </div>
-      </section>
-
-      {/* ── Divider ──────────────────────────────────────────────────── */}
-      <div className="border-t border-steel" />
-
-      {/* ── Training Modules ─────────────────────────────────────────── */}
-      <section className="pt-8 pb-6">
-        <div className="mb-5">
-          <h2 className="font-display text-xl font-semibold text-text mb-1">Industrial Training Platform</h2>
-          <p className="text-text-muted text-sm">Practice on a realistic panel, diagnose live faults, and run a full commissioning checklist.</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {TRAINING_ITEMS.map((f, i) => (
-            <FeatureCard key={f.path} feature={f} delay={i * 0.03} />
-          ))}
-        </div>
-      </section>
-
-      <div className="border border-steel rounded-xl px-5 py-4 mt-4 mb-4 flex items-start gap-3">
-        <Info size={16} className="text-text-dim shrink-0 mt-0.5" />
-        <p className="text-text-muted text-sm leading-relaxed">
-          Built with engineering data from real EOT crane panel assembly · Relay interlock logic based on
-          industrial standards · Component ratings follow IS/IEC standards.
+        <p className="text-text-dim text-xs mt-5 leading-relaxed">
+          Built with engineering data from real EOT crane panel assembly · component ratings follow IS/IEC standards.
         </p>
-      </div>
+      </section>
     </div>
   )
 }
@@ -145,17 +138,11 @@ function FeatureCard({ feature, delay }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay }}>
       <Link
         to={feature.path}
-        className={`group block bg-surface border rounded-xl p-5 hover:border-amber hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all duration-200 h-full relative
-          ${feature.isHandbook ? 'border-amber/40' : 'border-steel'}`}
+        className="group block bg-surface border border-steel rounded-xl p-5 hover:border-amber hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all duration-200 h-full relative"
       >
         {feature.step && (
           <span className="absolute top-4 right-4 text-[0.65rem] font-mono text-text-dim border border-steel rounded-full w-5 h-5 flex items-center justify-center">
             {feature.step}
-          </span>
-        )}
-        {feature.isNew && (
-          <span className="absolute top-4 right-4 text-[0.6rem] font-semibold uppercase tracking-wide bg-safe-dim text-safe border border-safe/40 rounded-full px-1.5 py-0.5">
-            New
           </span>
         )}
         <div className="w-10 h-10 rounded-lg bg-inset border border-steel flex items-center justify-center mb-3 group-hover:border-amber transition-colors">
@@ -163,6 +150,35 @@ function FeatureCard({ feature, delay }) {
         </div>
         <h3 className="text-text font-semibold mb-1.5">{feature.label}</h3>
         <p className="text-text-dim text-sm leading-relaxed">{feature.description}</p>
+      </Link>
+    </motion.div>
+  )
+}
+
+// Compact row for secondary destinations — icon, label, one-line description,
+// and a chevron. Same information as FeatureCard's grid, at a fraction of the
+// visual weight, so "More tools" reads as a scannable list rather than a
+// second wall of cards.
+function ToolRow({ item, delay }) {
+  const Icon = item.icon
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay }}>
+      <Link to={item.path} className="group flex items-center gap-3 px-4 py-3 hover:bg-surface-hover transition-colors">
+        <div className="w-8 h-8 rounded-md bg-inset border border-steel flex items-center justify-center shrink-0 group-hover:border-amber transition-colors">
+          <Icon size={15} className="text-amber" strokeWidth={2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-text text-sm font-medium truncate">{item.label}</span>
+            {item.isNew && (
+              <span className="shrink-0 text-[0.6rem] font-semibold uppercase tracking-wide bg-safe-dim text-safe border border-safe/40 rounded-full px-1.5 py-0.5">
+                New
+              </span>
+            )}
+          </div>
+          <p className="text-text-dim text-xs truncate">{item.description}</p>
+        </div>
+        <ChevronRight size={15} className="text-text-dim shrink-0 group-hover:text-amber group-hover:translate-x-0.5 transition-transform duration-150" />
       </Link>
     </motion.div>
   )
