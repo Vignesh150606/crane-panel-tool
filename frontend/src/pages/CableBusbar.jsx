@@ -128,9 +128,13 @@ export default function CableBusbar() {
           <Card>
             <h2 className="font-display text-amber font-semibold mb-4">Cable Sizing</h2>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              {/* "Capacity" used to sit here as its own StatPlate — same Amp
+                  figure EngineeringStatus below already shows as "selected".
+                  Recommended Size (mm²) stays: it's the cross-section value,
+                  not the cable's Amp capacity, so nothing else on this card
+                  shows it. */}
+              <div className="mb-4">
                 <StatPlate label="Recommended Size" value={result.cable_size} unit="mm²" tone={result.status.cable.sizing_status === 'undersized' ? 'danger' : 'safe'} />
-                <StatPlate label="Capacity" value={result.cable_capacity} unit="A" tone="info" />
               </div>
 
               <div className="mb-4">

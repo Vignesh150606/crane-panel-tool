@@ -116,11 +116,16 @@ export default function NameplateCalculator() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-4">
               <Card variant="computed">
                 <h3 className="font-display text-amber font-semibold mb-3">Component Ratings</h3>
+                {/* Contactor Rating / MPCB Rating StatPlates used to repeat here —
+                    same Amp figures the EngineeringStatus cards below already show
+                    as "selected", just with a bigger font and no margin context.
+                    Kept only the two values not shown anywhere else on this card:
+                    Overload Setting (no EngineeringStatus for it) and Cable Size
+                    in mm² (a different value from the cable's Amp capacity that
+                    EngineeringStatus does show). */}
                 <div className="grid grid-cols-2 gap-2.5 mb-4">
                   <StatPlate label="Motor Power" value={`${result.hp} HP`} note={`${result.kw} kW`} />
                   <StatPlate label="Full Load Current" value={result.flc} unit="A" />
-                  <StatPlate label="Contactor Rating" value={result.contactor_rating} unit="A" tone={result.status.contactor.sizing_status === 'undersized' ? 'danger' : 'safe'} note="2x FLC rule" />
-                  <StatPlate label="MPCB Rating" value={result.mpcb_rating} unit="A" tone={result.status.mpcb.sizing_status === 'undersized' ? 'danger' : 'safe'} />
                   <StatPlate label="Overload Setting" value={result.overload_setting} unit="A" tone="amber" />
                   <StatPlate label="Cable Size" value={result.cable_size} unit="mm²" tone={result.status.cable.sizing_status === 'undersized' ? 'danger' : 'info'} />
                 </div>

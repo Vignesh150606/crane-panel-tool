@@ -3,6 +3,57 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.1.4 — App-wide density audit (Phase 7, cont.)
+
+Follow-up to v1.1.3: re-audited every page/panel in the app for the same
+class of problem (repeated or duplicate content on result-heavy screens),
+not just the one component fixed last time.
+
+Full page-by-page review found no other instance of the specific
+"same sentence repeated per card" pattern v1.1.3 fixed — every other page's
+descriptive text (fault descriptions, formula reasoning, checklist items,
+toggle captions, page-header one-liners) turned out to be genuinely unique
+per-instance content already, not duplicate boilerplate, and most of it was
+already behind progressive disclosure (collapsed `FormulaExplainer`/
+`CollapsibleSection`) from earlier passes. No changes made to those pages —
+per the standing rule, lean pages are left alone rather than churned for
+the sake of a diff.
+
+That review did surface a different, real duplication introduced by the
+v1.1.3 layout: on three pages, a `StatPlate` showing a component's Amp
+rating sat directly above an `EngineeringStatus` card that (post-v1.1.3)
+now shows that exact same number inline as "selected", with more context
+(required + margin) than the StatPlate had. Confirmed via the backend
+(`app/status.py` / `app/routers/calculations.py` / `app/routers/cable.py`)
+that these were literally the same value before touching anything, not just
+visually similar:
+
+- **Load Calculator** (`pages/LoadCalculator.jsx`, Components tab): removed
+  the "Contactor" and "MPCB" StatPlates from each of the 3 motor cards (6
+  StatPlates total) — same Amp figures the `EngineeringStatus` cards
+  directly below already show. Kept the "Cable Size" StatPlate (mm²), since
+  that's cross-section, a different value from the cable's Amp capacity
+  that `EngineeringStatus` displays.
+- **Nameplate Calculator** (`pages/NameplateCalculator.jsx`): removed the
+  "Contactor Rating" and "MPCB Rating" StatPlates. Also dropped the "2x FLC
+  rule" caption that lived on the Contactor Rating StatPlate — that
+  derivation already has a proper home (the "Learn the theory" link to the
+  Handbook's Contactor Sizing entry), so it was a second, thinner copy of
+  content that exists in full elsewhere rather than a number found nowhere
+  else. Kept Motor Power, Full Load Current, Overload Setting (no
+  `EngineeringStatus` shows this one), and Cable Size (mm²).
+- **Cable & Busbar** (`pages/CableBusbar.jsx`): removed the "Capacity" (A)
+  StatPlate — same figure the "Cable sizing margin" `EngineeringStatus`
+  card right below it already shows. Kept "Recommended Size" (mm²).
+
+No number was actually deleted from the app in any of these — each removed
+StatPlate's value is still on screen, in the `EngineeringStatus` card
+immediately below where the StatPlate used to sit. No backend, calculation,
+or validation files touched — `cable_capacity`, `contactor_rating` and
+`mpcb_rating` are still returned by the API, just no longer double-rendered
+on these three pages. `npm run lint`, `npm run build`, and
+`ssr-smoke-test.mjs` (19/19 pages) all clean.
+
 ## v1.1.3 — Cut repeated result-page text (Phase 7)
 
 Problem: result-heavy pages built on `EngineeringStatus` (Contactor/MPCB/Cable

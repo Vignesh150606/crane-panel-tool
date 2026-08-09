@@ -383,9 +383,12 @@ export default function LoadCalculator() {
                               <h3 className="font-display font-semibold text-text flex items-center gap-2 text-sm mb-3">
                                 <Icon size={16} className="text-copper" /> {meta.label}
                               </h3>
-                              <div className="grid grid-cols-1 gap-2 mb-3">
-                                <StatPlate label="Contactor" value={data.contactor_rating} unit="A" tone={data.status.contactor.sizing_status === 'undersized' ? 'danger' : 'safe'} />
-                                <StatPlate label="MPCB" value={data.mpcb_rating} unit="A" tone={data.status.mpcb.sizing_status === 'undersized' ? 'danger' : 'safe'} />
+                              {/* Contactor/MPCB Amp ratings used to repeat here as StatPlates,
+                                  directly above EngineeringStatus cards showing the exact same
+                                  number as "selected". Cable Size (mm²) is kept — it's a
+                                  genuinely different value (cross-section, not the cable's amp
+                                  capacity) that doesn't appear anywhere else on this tab. */}
+                              <div className="mb-3">
                                 <StatPlate label="Cable Size" value={data.cable_size} unit="mm²" tone={data.status.cable.sizing_status === 'undersized' ? 'danger' : 'safe'} />
                               </div>
                               <div className="flex flex-col gap-1.5">
