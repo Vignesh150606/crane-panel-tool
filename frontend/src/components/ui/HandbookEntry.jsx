@@ -38,7 +38,7 @@ export default function HandbookEntry({ topic, defaultOpen = false, forwardedRef
     <div id={topic.id} ref={forwardedRef} className="border border-steel rounded-lg overflow-hidden bg-inset scroll-mt-24">
       <button
         onClick={handleToggle}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer hover:bg-surface-hover transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-4 py-3.5 text-left cursor-pointer hover:bg-surface-hover transition-colors"
         aria-expanded={open}
       >
         <span className="flex items-baseline gap-2 min-w-0">

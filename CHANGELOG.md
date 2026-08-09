@@ -3,6 +3,42 @@
 Full detail for each entry lives in its own report file, linked below —
 this is the scannable version.
 
+## v1.1.5 — Spacing pass on the sidebar and Handbook (Phase 7, cont.)
+
+Different kind of change from v1.1.3/v1.1.4: those cut duplicate content;
+this pass added breathing room to layout that was already lean on content
+but visually cramped — prompted by screenshots showing the global sidebar
+and the Handbook page looking dense despite having no actual duplicate
+text left to remove.
+
+- `components/layout/SidebarContent.jsx`: increased row padding (`py-2` →
+  `py-2.5`) and the gap between rows (`mb-0.5` → `mb-1`); increased spacing
+  above each section label (`pt-4` → `pt-6`) and added a subtle top border
+  between groups (Quick Access / Recently Visited / Design Workflow /
+  Reference Tools / Training Modules) so the sidebar reads as distinct
+  grouped sections instead of one long undifferentiated list — same
+  information, clearer rhythm.
+- `pages/EngineeringHandbook.jsx`: increased the gap between the sticky
+  left nav and main content (`gap-8` → `gap-10`), the left nav's own topic
+  sub-list spacing, the space between sections (`space-y-8` → `space-y-10`)
+  and between topic rows within a section (`space-y-2.5` → `space-y-3`),
+  and the section-overview card grid's gap and bottom margin. This is the
+  page with by far the most stacked rows (19 topics + glossary + FAQ), so
+  it got the most attention.
+- `components/ui/HandbookEntry.jsx`: slightly taller closed-row padding
+  (`py-3` → `py-3.5`).
+
+No content, numbers, or navigation removed or restructured — every link,
+section, and topic still does exactly what it did before, just with more
+room around it. No backend files touched. `npm run lint`, `npm run build`,
+and `ssr-smoke-test.mjs` (19/19) all clean.
+
+Note: this sandbox has no browser/screenshot tooling, so these are
+reasoned, deliberate spacing increases against the actual screenshots
+provided, not visually verified pixel-by-pixel on this end — worth a fresh
+screenshot after deploying to confirm it reads right, especially on the
+Handbook's two-column layout at your actual viewport width.
+
 ## v1.1.4 — App-wide density audit (Phase 7, cont.)
 
 Follow-up to v1.1.3: re-audited every page/panel in the app for the same

@@ -6,9 +6,9 @@ import { useUIStore } from '../../store/uiStore'
 import Badge from '../ui/Badge'
 
 function SectionLabel({ collapsed, children }) {
-  if (collapsed) return <div className="h-px bg-steel mx-2 my-3" />
+  if (collapsed) return <div className="h-px bg-steel mx-2 my-4" />
   return (
-    <div className="px-2.5 pt-4 pb-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-text-dim first:pt-0">
+    <div className="px-2.5 pt-6 pb-2 text-xs font-semibold uppercase tracking-[0.08em] text-text-dim first:pt-1 first:border-t-0 border-t border-steel/60 mt-1 first:mt-0">
       {children}
     </div>
   )
@@ -20,7 +20,7 @@ function Row({ to, icon: Icon, label, active, collapsed, onNavigate, badge, numb
       to={to}
       onClick={onNavigate}
       title={collapsed ? label : undefined}
-      className={`group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors mb-0.5
+      className={`group relative flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm transition-colors mb-1
         ${active
           ? "text-amber font-semibold bg-amber/10 before:content-[''] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-amber"
           : 'text-text-muted hover:text-text hover:bg-surface-hover'}

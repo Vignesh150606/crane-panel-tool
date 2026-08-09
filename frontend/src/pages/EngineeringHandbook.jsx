@@ -132,14 +132,14 @@ export default function EngineeringHandbook() {
         description="Every formula and control-circuit concept used anywhere in this app, in one place — equation, variables, a worked example, and where it's actually used."
       />
 
-      <div className="flex items-center gap-4 flex-wrap bg-inset border border-steel rounded-lg px-4 py-3 mb-6 text-xs">
+      <div className="flex items-center gap-4 flex-wrap bg-inset border border-steel rounded-lg px-4 py-3.5 mb-7 text-xs">
         <span className="text-text-muted font-semibold shrink-0">Put it into practice:</span>
         <Link to="/panel-explorer" className="flex items-center gap-1.5 text-amber hover:text-amber-dim transition-colors"><LayoutPanelTop size={13} /> Panel Explorer</Link>
         <Link to="/challenge-mode" className="flex items-center gap-1.5 text-amber hover:text-amber-dim transition-colors"><Gamepad2 size={13} /> Challenge Mode</Link>
         <Link to="/commissioning" className="flex items-center gap-1.5 text-amber hover:text-amber-dim transition-colors"><ClipboardCheck size={13} /> Virtual Commissioning</Link>
       </div>
 
-      <div className="grid lg:grid-cols-[260px_1fr] gap-8 items-start">
+      <div className="grid lg:grid-cols-[260px_1fr] gap-10 items-start">
         {/* ── Sticky left navigation ─────────────────────────────────── */}
         <aside className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto space-y-5 pb-2">
           <div className="relative">
@@ -182,7 +182,7 @@ export default function EngineeringHandbook() {
                 >
                   {section.title}
                 </a>
-                <div className="border-l border-steel ml-2.5 pl-2.5 space-y-0.5 mb-1.5">
+                <div className="border-l border-steel ml-2.5 pl-2.5 space-y-1 mb-2.5">
                   {section.topics.map((t) => (
                     <NavLink key={t.id} href={`#${t.id}`} label={t.title} active={activeId === t.id} compact />
                   ))}
@@ -205,7 +205,7 @@ export default function EngineeringHandbook() {
         {/* ── Main content ───────────────────────────────────────────── */}
         <div className="min-w-0">
           {!search && (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-8">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3.5 mb-10">
               {HANDBOOK_SECTIONS.map((section) => (
                 <a
                   key={section.id}
@@ -228,11 +228,11 @@ export default function EngineeringHandbook() {
             </Card>
           )}
 
-          <div className="space-y-8">
+          <div className="space-y-10">
             {filteredSections.map((section) => (
               <section key={section.id} id={`section-${section.id}`} className="scroll-mt-24">
-                <h2 className="font-display text-lg text-amber font-semibold mb-3">{section.title}</h2>
-                <div className="space-y-2.5">
+                <h2 className="font-display text-lg text-amber font-semibold mb-4">{section.title}</h2>
+                <div className="space-y-3">
                   {section.topics.map((topic) => (
                     <HandbookEntry key={topic.id} topic={topic} />
                   ))}
@@ -247,7 +247,7 @@ export default function EngineeringHandbook() {
                 <h2 className="font-display text-lg text-amber font-semibold mb-3 flex items-center gap-2">
                   <Tag size={18} /> Protection Device & Term Glossary
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {PROTECTION_GLOSSARY.map((g) => (
                     <Card key={g.term} padding="sm">
                       <div className="flex items-baseline gap-2 mb-1">
@@ -265,7 +265,7 @@ export default function EngineeringHandbook() {
                 <p className="text-text-dim text-xs mb-3">
                   General conventions per IEC 60617 — shape descriptions below, not pixel-precise renderings of the standard itself.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {IEC_SYMBOLS.map((sym) => (
                     <Card key={sym.id} padding="sm">
                       <div className="text-sm font-semibold text-text mb-1">{sym.label}</div>
